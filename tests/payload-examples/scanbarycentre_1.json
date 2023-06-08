@@ -1,0 +1,32 @@
+{
+  "$schemaRef": "https://eddn.edcd.io/schemas/scanbarycentre/1",
+  "header": {
+    "gamebuild": "r291050/r0 ",
+    "gameversion": "4.0.0.1477",
+    "gatewayTimestamp": "2023-04-19T09:01:20.971553Z",
+    "softwareName": "E:D Market Connector [Windows]",
+    "softwareVersion": "5.8.1",
+    "uploaderID": "0414cf8049971189be120ad1c46c44f1b035701b"
+  },
+  "message": {
+    "AscendingNode": -110.981992,
+    "BodyID": 12,
+    "Eccentricity": 0.000993,
+    "MeanAnomaly": 215.023788,
+    "OrbitalInclination": -0.183496,
+    "OrbitalPeriod": 12268720.269203,
+    "Periapsis": 353.350394,
+    "SemiMajorAxis": 57471753358.84094,
+    "StarPos": [
+      -4594.03125,
+      -262.03125,
+      6386.625
+    ],
+    "StarSystem": "Gru Dryiae DF-W b48-3",
+    "SystemAddress": 7206283259809,
+    "event": "ScanBaryCentre",
+    "horizons": true,
+    "odyssey": true,
+    "timestamp": "2023-04-19T09:01:19Z"
+  }
+}

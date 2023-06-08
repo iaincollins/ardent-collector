@@ -1,0 +1,32 @@
+{
+  "$schemaRef": "https://eddn.edcd.io/schemas/fssbodysignals/1",
+  "header": {
+    "gamebuild": "r291050/r0 ",
+    "gameversion": "4.0.0.1477",
+    "gatewayTimestamp": "2023-04-19T09:01:16.785697Z",
+    "softwareName": "EDDI",
+    "softwareVersion": "4.0.2",
+    "uploaderID": "d1dab12a35b5f7d83332750502fff861c7091cb3"
+  },
+  "message": {
+    "BodyID": 35,
+    "BodyName": "Froarks GT-W c16-285 AB 1 b a",
+    "Signals": [
+      {
+        "Count": 3,
+        "Type": "$SAA_SignalType_Geological;"
+      }
+    ],
+    "StarPos": [
+      -847.21875,
+      513.78125,
+      15043.4375
+    ],
+    "StarSystem": "Froarks GT-W c16-285",
+    "SystemAddress": 78422647152274,
+    "event": "FSSBodySignals",
+    "horizons": true,
+    "odyssey": true,
+    "timestamp": "2023-04-19T09:01:16Z"
+  }
+}

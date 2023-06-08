@@ -1,0 +1,23 @@
+{
+  "$schemaRef": "https://eddn.edcd.io/schemas/fssallbodiesfound/1",
+  "header": {
+    "gatewayTimestamp": "2023-04-19T09:01:19.628793Z",
+    "softwareName": "E:D Market Connector [Windows]",
+    "softwareVersion": "5.4.1",
+    "uploaderID": "6c96f971faf1d2f1289fa22dc378583f45d5b3fb"
+  },
+  "message": {
+    "Count": 17,
+    "StarPos": [
+      -5710.84375,
+      10.53125,
+      -4550.96875
+    ],
+    "SystemAddress": 6121569914690,
+    "SystemName": "Gludgoe YX-L c7-22",
+    "event": "FSSAllBodiesFound",
+    "horizons": true,
+    "odyssey": true,
+    "timestamp": "2023-04-19T09:01:18Z"
+  }
+}

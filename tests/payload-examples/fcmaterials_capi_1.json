@@ -1,0 +1,23 @@
+{
+  "$schemaRef": "https://eddn.edcd.io/schemas/fcmaterials_capi/1",
+  "header": {
+    "gamebuild": "",
+    "gameversion": "CAPI-Live-market",
+    "gatewayTimestamp": "2023-04-19T09:03:13.798965Z",
+    "softwareName": "E:D Market Connector [Windows]",
+    "softwareVersion": "5.8.1",
+    "uploaderID": "172f56ba68dbf6d0593aa9bf322dbff928587cc1"
+  },
+  "message": {
+    "CarrierID": "V7Q-22L",
+    "Items": {
+      "purchases": [],
+      "sales": []
+    },
+    "MarketID": 3706630656,
+    "event": "FCMaterials",
+    "horizons": false,
+    "odyssey": true,
+    "timestamp": "2023-04-19T09:03:12Z"
+  }
+}

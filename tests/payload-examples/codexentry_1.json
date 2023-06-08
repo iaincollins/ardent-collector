@@ -1,0 +1,34 @@
+{
+  "$schemaRef": "https://eddn.edcd.io/schemas/codexentry/1",
+  "header": {
+    "gamebuild": "r291050/r0 ",
+    "gameversion": "4.0.0.1477",
+    "gatewayTimestamp": "2023-04-19T09:01:56.509312Z",
+    "softwareName": "E:D Market Connector [Windows]",
+    "softwareVersion": "5.8.1",
+    "uploaderID": "d8295cedece9cbd02adcff2b87c6d8ba5da0e36b"
+  },
+  "message": {
+    "BodyID": 91,
+    "BodyName": "Eorl Auwsy HG-Y e6097 B 10 b",
+    "Category": "$Codex_Category_Biology;",
+    "EntryID": 2321203,
+    "Latitude": -30.784599,
+    "Longitude": -133.105423,
+    "Name": "$Codex_Ent_Bacterial_12_A_Name;",
+    "NearestDestination": "",
+    "Region": "$Codex_RegionName_2;",
+    "StarPos": [
+      4379.53125,
+      83.9375,
+      19655.3125
+    ],
+    "SubCategory": "$Codex_SubCategory_Organic_Structures;",
+    "System": "Eorl Auwsy HG-Y e6097",
+    "SystemAddress": 26187839572108,
+    "event": "CodexEntry",
+    "horizons": true,
+    "odyssey": true,
+    "timestamp": "2023-04-19T09:01:55Z"
+  }
+}

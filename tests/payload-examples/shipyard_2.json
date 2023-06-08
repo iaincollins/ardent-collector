@@ -1,0 +1,32 @@
+{
+  "$schemaRef": "https://eddn.edcd.io/schemas/shipyard/2",
+  "header": {
+    "gamebuild": "",
+    "gameversion": "CAPI-Live-shipyard",
+    "gatewayTimestamp": "2023-04-19T09:01:18.233379Z",
+    "softwareName": "E:D Market Connector [Windows]",
+    "softwareVersion": "5.8.1",
+    "uploaderID": "35055f373308e76df99009e9d230804cdeae4b1f"
+  },
+  "message": {
+    "horizons": true,
+    "marketId": 3224595968,
+    "odyssey": true,
+    "ships": [
+      "belugaliner",
+      "cobramkiii",
+      "dolphin",
+      "empire_courier",
+      "empire_eagle",
+      "empire_trader",
+      "hauler",
+      "orca",
+      "sidewinder",
+      "type6",
+      "type7"
+    ],
+    "stationName": "de Kamp Vision",
+    "systemName": "HIP 29596",
+    "timestamp": "2023-04-19T09:01:17Z"
+  }
+}
