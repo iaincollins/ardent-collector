@@ -15,3 +15,6 @@ periodically generates reports from the data (e.g. trade reports).
 Data collected can be accessed by the Ardent API, a seperate service that
 provides read-only access to the data via a REST API via a global
 Content Distribution Network.
+
+For information about the Ardent API refer to 
+https://github.com/iaincollins/ardent-api
