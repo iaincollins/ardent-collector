@@ -75,12 +75,12 @@ let databaseWriteLocked = false
     console.log('Found existing backup log')
   }
 
-  // Run a task every day to export data to a network volume at 07:00 UTC.
+  // Run a task every day to export data to a network volume at 07:15 UTC.
   // This is done ahead of disk volume backups and report generation.
   //
   // This task takes about 5 minutes to run. Currently no attempt to buffer new
   // data is made during the backup, but that may change in future.
-  cron.schedule('0 0 7 * * *', () => {
+  cron.schedule('0 15 7 * * *', () => {
     databaseWriteLocked = true
     // While database is going to be locked for backup, also run an optimize
     // routine as it too blocks writing (even when run from a seperate thread).
