@@ -4,7 +4,7 @@ const fs = require('fs')
 const {
   ARDENT_DATA_DIR,
   ARDENT_BACKUP_DIR
-} = require('../../lib/consts')
+} = require('../lib/consts')
 
 ;(async () => {
   console.log(`Backup location: ${ARDENT_BACKUP_DIR}`)

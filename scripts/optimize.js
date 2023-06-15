@@ -1,4 +1,4 @@
-const { systemsDb, tradeDb } = require('../../lib/db')
+const { systemsDb, tradeDb } = require('../lib/db')
 
 // Using 'VACUUM' can be very slow and use up to 2x the disk space when running.
 //
