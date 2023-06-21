@@ -78,7 +78,7 @@ let databaseWriteLocked = false
   // Run a task every day to export data to a network volume at 07:15 UTC.
   // This is done ahead of disk volume backups and report generation.
   //
-  // This task takes about 5 minutes to run. Currently no attempt to buffer new
+  // This task takes about 15 minutes to run. Currently no attempt to buffer new
   // data is made during the backup, but that may change in future.
   cron.schedule('0 15 7 * * *', () => {
     databaseWriteLocked = true
@@ -96,7 +96,7 @@ let databaseWriteLocked = false
         // After optimizing and performing a backup, generate daily reports.
         // The write lock can be lifted but the the service may be slower while
         // reports are being generated (although they explicitly )
-        exec('npm run reports', (error, stdout, stderr) => {
+        exec('npm run commodity-stats', (error, stdout, stderr) => {
           if (error) console.error(error)
         })
       })
@@ -106,7 +106,7 @@ let databaseWriteLocked = false
   // Generate stats and reports every hour
   // @TODO Replace hourly stats job with triggers on tables
   cron.schedule('0 0 */1 * * *', () => {
-    exec('npm run stats', (error, stdout, stderr) => {
+    exec('npm run database-stats', (error, stdout, stderr) => {
       if (error) console.error(error)
     })
   })

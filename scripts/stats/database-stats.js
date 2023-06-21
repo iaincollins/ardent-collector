@@ -1,11 +1,12 @@
 const fs = require('fs')
 const path = require('path')
-const { ARDENT_DATA_DIR } = require('../lib/consts')
-const { getISOTimestamp } = require('../lib/utils/dates')
-const { tradeDb, systemsDb } = require('../lib/db')
+const { ARDENT_CACHE_DIR } = require('../../lib/consts')
+const { getISOTimestamp } = require('../../lib/utils/dates')
+const { tradeDb, systemsDb } = require('../../lib/db')
 
 ;(async () => {
-  console.time('Generate stats')
+  console.log('Updating database stats…')
+  console.time('Update database stats')
   const commodityStats = tradeDb.prepare(`
     SELECT
       COUNT(*) AS tradeOrders,
@@ -41,8 +42,8 @@ const { tradeDb, systemsDb } = require('../lib/db')
     },
     timestamp: new Date().toISOString()
   }
-  fs.writeFileSync(path.join(ARDENT_DATA_DIR, 'stats.json'), JSON.stringify(stats, null, 2))
-  console.timeEnd('Generate stats')
-
+  if (!fs.existsSync(ARDENT_CACHE_DIR)) { fs.mkdirSync(ARDENT_CACHE_DIR, { recursive: true }) }
+  fs.writeFileSync(path.join(ARDENT_CACHE_DIR, 'database-stats.json'), JSON.stringify(stats, null, 2))
+  console.timeEnd('Update database stats')
   process.exit()
 })()

@@ -1,6 +1,6 @@
 {
   "name": "ardent-collector",
-  "version": "1.31.1",
+  "version": "1.32.0",
   "description": "Ardent Collector saves data submitted to EDDN",
   "main": "index.js",
   "scripts": {
@@ -9,8 +9,8 @@
     "backup": "node scripts/backup.js",
     "restore": "node scripts/restore.js",
     "optimize": "node scripts/optimize.js",
-    "stats": "node scripts/stats.js",
-    "reports": "node scripts/reports.js",
+    "database-stats": "node scripts/stats/database-stats.js",
+    "commodity-stats": "node scripts/stats/commodity-stats.js",
     "lint": "npx standard --fix"
   },
   "repository": {
