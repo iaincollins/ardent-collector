@@ -1,6 +1,5 @@
 const fs = require('fs')
-const path = require('path')
-const { ARDENT_CACHE_DIR } = require('../../lib/consts')
+const { ARDENT_CACHE_DIR, ARDENT_DATABASE_STATS } = require('../../lib/consts')
 const { getISOTimestamp } = require('../../lib/utils/dates')
 const { tradeDb, systemsDb } = require('../../lib/db')
 
@@ -43,7 +42,7 @@ const { tradeDb, systemsDb } = require('../../lib/db')
     timestamp: new Date().toISOString()
   }
   if (!fs.existsSync(ARDENT_CACHE_DIR)) { fs.mkdirSync(ARDENT_CACHE_DIR, { recursive: true }) }
-  fs.writeFileSync(path.join(ARDENT_CACHE_DIR, 'database-stats.json'), JSON.stringify(stats, null, 2))
+  fs.writeFileSync(ARDENT_DATABASE_STATS, JSON.stringify(stats, null, 2))
   console.timeEnd('Update database stats')
   process.exit()
 })()

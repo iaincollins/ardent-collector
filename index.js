@@ -6,7 +6,7 @@ console.log('Configuring environment …')
 const {
   EDDN_SERVER,
   ARDENT_BACKUP_LOG,
-  ARDENT_DATA_DIR,
+  ARDENT_DATABASE_STATS,
   ARDENT_COLLECTOR_LOCAL_PORT,
   ARDENT_COLLECTOR_DEFAULT_CACHE_CONTROL
 } = require('./lib/consts')
@@ -18,7 +18,6 @@ const PAYLOAD_EXAMPLES_DIR = './tests/payload-examples'
 console.log('Loading dependancies …')
 const { exec } = require('child_process')
 const process = require('process')
-const path = require('path')
 const fs = require('fs')
 const zmq = require('zeromq')
 const zlib = require('zlib')
@@ -151,7 +150,7 @@ process.on('exit', () => console.log('Shutting down'))
 process.on('uncaughtException', (e) => console.log('Uncaught exception:', e))
 
 function printStats () {
-  const stats = JSON.parse(fs.readFileSync(path.join(ARDENT_DATA_DIR, 'stats.json')))
+  const stats = JSON.parse(fs.readFileSync(ARDENT_DATABASE_STATS))
 
   return `Ardent Collector v${Package.version} Online\n` +
     '--------------------------\n' +
