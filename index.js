@@ -32,6 +32,7 @@ require('./lib/db')
 console.log('Loading libraries …')
 const commodityEvent = require('./lib/event-handlers/commodity-event')
 const discoveryScanEvent = require('./lib/event-handlers/discovery-scan-event')
+const navRouteEvent = require('./lib/event-handlers/navroute-event')
 
 // When this is set don't write events to the database (should be buffered)
 let databaseWriteLocked = false
@@ -137,6 +138,9 @@ let databaseWriteLocked = false
           break
         case 'https://eddn.edcd.io/schemas/fssdiscoveryscan/1':
           discoveryScanEvent(payload)
+          break
+        case 'https://eddn.edcd.io/schemas/navroute/1':
+          navRouteEvent(payload)
           break
         default:
       }
