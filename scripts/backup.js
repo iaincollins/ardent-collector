@@ -19,7 +19,8 @@ const MIN_ROWS_FOR_BACKUP_VALIDATION = 100
 
 ;(async () => {
   console.log(`Writing backup log to ${ARDENT_BACKUP_LOG}`)
-
+  if (!fs.existsSync(ARDENT_BACKUP_DIR)) { fs.mkdirSync(ARDENT_BACKUP_DIR, { recursive: true }) }
+  
   const started = new Date().toISOString()
   const verifyResults = []
 
@@ -42,7 +43,6 @@ const MIN_ROWS_FOR_BACKUP_VALIDATION = 100
 
   console.time('Backup complete')
   writeBackupLog(`Creating backups in ${ARDENT_BACKUP_DIR}`)
-  if (!fs.existsSync(ARDENT_BACKUP_DIR)) { fs.mkdirSync(ARDENT_BACKUP_DIR, { recursive: true }) }
 
   writeBackupLog(`Backing up ${path.basename(pathToTradeDbBackup)}`)
   backupDatabase(tradeDb, pathToTradeDbBackup)
