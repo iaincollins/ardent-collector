@@ -1,6 +1,6 @@
 {
   "name": "ardent-collector",
-  "version": "1.33.0",
+  "version": "1.34.0",
   "description": "Ardent Collector saves data submitted to EDDN",
   "main": "index.js",
   "scripts": {

@@ -20,7 +20,7 @@ const MIN_ROWS_FOR_BACKUP_VALIDATION = 100
 ;(async () => {
   console.log(`Writing backup log to ${ARDENT_BACKUP_LOG}`)
   if (!fs.existsSync(ARDENT_BACKUP_DIR)) { fs.mkdirSync(ARDENT_BACKUP_DIR, { recursive: true }) }
-  
+
   const started = new Date().toISOString()
   const verifyResults = []
 
