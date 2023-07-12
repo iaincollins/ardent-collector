@@ -121,7 +121,7 @@ function disableDatabaseWriteLock () { databaseWriteLocked = false }
 
   // Generate stats every 15 minutes. Takes less than 30 seconds in production.
   // @TODO Could replace with triggers on tables (but might be complex…)
-  cron.schedule('0 */15 * * *', () => {
+  cron.schedule('0 */15 * * * *', () => {
     exec('npm run database-stats', (error, stdout, stderr) => {
       if (error) console.error(error)
     })
