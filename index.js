@@ -34,8 +34,10 @@ const commodityEvent = require('./lib/event-handlers/commodity-event')
 const discoveryScanEvent = require('./lib/event-handlers/discovery-scan-event')
 const navRouteEvent = require('./lib/event-handlers/navroute-event')
 
-// When this is set don't write events to the database (should be buffered)
+// When this is set don't write events to the database
 let databaseWriteLocked = false
+function enableDatabaseWriteLock () { databaseWriteLocked = true }
+function disableDatabaseWriteLock () { databaseWriteLocked = false }
 
 ;(async () => {
   // Start web service
@@ -66,36 +68,50 @@ let databaseWriteLocked = false
   // If a backup log does not exist, being a backup immediately
   if (!fs.existsSync(ARDENT_BACKUP_LOG)) {
     console.log('No backup log found, starting backup now')
-    databaseWriteLocked = true
+    enableDatabaseWriteLock()
     exec('npm run backup', (error, stdout, stderr) => {
       if (error) console.error(error)
-      databaseWriteLocked = false
+      disableDatabaseWriteLock()
     })
   } else {
     console.log('Found existing backup log')
   }
 
-  // Run a task every day to export data to a network volume at 07:15 UTC.
-  // This is done ahead of disk volume backups and report generation.
+  // Run a task every day to do database maintenance and backups at 07:15 UTC.
   //
-  // This task takes about 15 minutes to run. Currently no attempt to buffer new
-  // data is made during the backup, but that may change in future.
+  // Both optimization and backup block writing to the database so ideally
+  // requests should be buffered during that time, but it's a short window
+  // of 5-6 minutes every day and it happens during a quiet period so it's not
+  // been a priority to handle a few missing updates.
+  //
+  // During the maintenance window the API and website continue running.
+  //
+  // As long as the server is fast enough and the number of writes is low enough
+  // if we don't explicitly block writing all tasks will still complete, but it
+  // will cause timeouts and errors (and may take longer for the tasks to
+  // complete) so is better to explicitly pause writing for a few minutes.
+  //
+  // Optimization takes around 1 minute in production and blocks writes.
   cron.schedule('0 15 7 * * *', () => {
-    databaseWriteLocked = true
-    // While database is going to be locked for backup, also run an optimize
-    // routine as it too blocks writing (even when run from a seperate thread).
+    enableDatabaseWriteLock() // Disable writing to database during maintenance
+
+    // With SQLite only connections opened after optimization take advantage of
+    // any optimizations, so at 7:55 UTC every day all services that connect
+    // to the database – i.e. the Collector and the API – are automatically
+    // restarted (this is effectively instant).
     exec('npm run optimize', (error, stdout, stderr) => {
       if (error) console.error(error)
 
+      // Backup takes around 5 minutes in production and blocks writes.
       exec('npm run backup', (error, stdout, stderr) => {
         if (error) console.error(error)
 
-        // Mark database as open for writing again
-        databaseWriteLocked = false
+        disableDatabaseWriteLock()() // Mark database as open for writing again
 
-        // After optimizing and performing a backup, generate daily reports.
-        // The write lock can be lifted but the the service may be slower while
-        // reports are being generated (although they explicitly )
+        // Generating stats and trade reports takes about 10 minute. It does not
+        // block anything but the queries are quite heavy as they involve
+        // scanning and performing analysis on the entire trading database so we
+        // only do it once a day.
         exec('npm run commodity-stats', (error, stdout, stderr) => {
           if (error) console.error(error)
         })
@@ -103,9 +119,9 @@ let databaseWriteLocked = false
     })
   })
 
-  // Generate stats and reports every hour
-  // @TODO Replace hourly stats job with triggers on tables
-  cron.schedule('0 0 */1 * * *', () => {
+  // Generate stats every 15 minutes. Takes less than 30 seconds in production.
+  // @TODO Could replace with triggers on tables (but might be complex…)
+  cron.schedule('0 */15 * * *', () => {
     exec('npm run database-stats', (error, stdout, stderr) => {
       if (error) console.error(error)
     })
@@ -168,6 +184,6 @@ function printStats () {
         `Trade updates in last 7 days: ${stats.trade.updatedInLast7Days.toLocaleString()}\n` +
         `Trade updates in last 30 days: ${stats.trade.updatedInLast30Days.toLocaleString()}\n` +
         `Unique commodities: ${stats.trade.uniqueCommodities.toLocaleString()}\n` +
-        `Stats last updated: ${stats.timestamp} (updated hourly)`
+        `Stats last updated: ${stats.timestamp} (updated every 15 mimutes)`
       : 'Stats not generated yet')
 }
