@@ -40,6 +40,12 @@ let databaseWriteLocked = false
 function enableDatabaseWriteLock () { databaseWriteLocked = true }
 function disableDatabaseWriteLock () { databaseWriteLocked = false }
 
+// Ensure payload example dir (and journal examples sub dir) exists
+if (SAVE_PAYLOAD_EXAMPLES === true 
+    && !fs.existsSync(`${PAYLOAD_EXAMPLES_DIR}/journal_1`)) {
+  fs.mkdirSync(`${PAYLOAD_EXAMPLES_DIR}/journal_1`, { recursive: true })
+}
+
 ;(async () => {
   // Start web service
   console.log('Starting web service')
@@ -146,8 +152,15 @@ function disableDatabaseWriteLock () { databaseWriteLocked = false }
 
       // If we don't have an example message and SAVE_PAYLOAD_EXAMPLES is true, save it
       if (SAVE_PAYLOAD_EXAMPLES) {
-        const schemaFileName = schema.replace('https://eddn.edcd.io/schemas/', '').replaceAll('/', '_')
-        if (!fs.existsSync(`${PAYLOAD_EXAMPLES_DIR}/${schemaFileName}.json`)) { fs.writeFileSync(`${PAYLOAD_EXAMPLES_DIR}/${schemaFileName}.json`, JSON.stringify(payload, null, 2)) }
+        if (schema === 'https://eddn.edcd.io/schemas/journal/1') {
+          // Journal entries are a special case (they represent different game events and are raw evnets, not synthetic)
+          if (!fs.existsSync(`${PAYLOAD_EXAMPLES_DIR}/journal_1/${payload.message.event.toLowerCase()}.json`)) {
+            fs.writeFileSync(`${PAYLOAD_EXAMPLES_DIR}/journal_1/${payload.message.event.toLowerCase()}.json`, JSON.stringify(payload, null, 2))
+          }
+        } else {
+          const schemaFileName = schema.replace('https://eddn.edcd.io/schemas/', '').replaceAll('/', '_')
+          if (!fs.existsSync(`${PAYLOAD_EXAMPLES_DIR}/${schemaFileName}.json`)) { fs.writeFileSync(`${PAYLOAD_EXAMPLES_DIR}/${schemaFileName}.json`, JSON.stringify(payload, null, 2)) }
+        }
       }
       switch (schema) {
         case 'https://eddn.edcd.io/schemas/commodity/3':
@@ -161,6 +174,8 @@ function disableDatabaseWriteLock () { databaseWriteLocked = false }
           break
         case 'https://eddn.edcd.io/schemas/approachsettlement/1':
           approachSettlementEvent(payload)
+          break
+        case 'https://eddn.edcd.io/schemas/journal/1':
           break
         default:
       }
