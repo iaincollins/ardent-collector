@@ -1,4 +1,5 @@
-// @FIXME This script is old and needs to be refactored before it works again
+// @FIXME This script is old and needs to be refactored before it works again!
+// It's not needed anymore so refactoring is not a priority.
 const fs = require('fs')
 const path = require('path')
 const readline = require('readline')
@@ -9,10 +10,10 @@ const {
   SYSTEM_GRID_SIZE,
   SYSTEM_SECTOR_HASH_LENGTH
 } = require('../../lib/consts')
-const {
-  ensureSystemsTableExists,
-  ensureSystemsTableIndexesExists
-} = require('../../lib/db/systems-db')
+// const {
+//   ensureSystemsTableExists,
+//   ensureSystemsTableIndexesExists
+// } = require('../../lib/db/systems-db')
 
 // Systems data seed by spansh.co.uk exports
 const SYSTEMS_JSON = '../ardent-seed-data/systems.json'
@@ -52,7 +53,7 @@ const USE_ADDITIONAL_RAM = true
     }
   }
 
-  ensureSystemsTableExists(db)
+  // ensureSystemsTableExists()
 
   const insertOrReplaceSystem = systemsDb.prepare(`
     INSERT OR REPLACE INTO systems (
@@ -130,7 +131,7 @@ const USE_ADDITIONAL_RAM = true
   console.timeEnd('Importing systems')
 
   console.time('Creating indexes')
-  ensureSystemsTableIndexesExists(db)
+  // ensureSystemsTableIndexesExists(db)
   console.timeEnd('Creating indexes')
 
   systemsDb.close()

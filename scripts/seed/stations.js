@@ -77,7 +77,6 @@ const USE_ADDITIONAL_RAM = true
       const system = selectSystemByName.get({ systemName: station.systemName })
 
       if (!system) {
-        //console.error('Failed to find system', JSON.stringify(station, null, 2))
         console.error('Failed to find system', station.systemName)
         continue
       }
