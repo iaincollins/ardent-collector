@@ -33,6 +33,7 @@ console.log('Loading libraries …')
 const commodityEvent = require('./lib/event-handlers/commodity-event')
 const discoveryScanEvent = require('./lib/event-handlers/discovery-scan-event')
 const navRouteEvent = require('./lib/event-handlers/navroute-event')
+const approachSettlementEvent = require('./lib/event-handlers/approach-settlement-event')
 
 // When this is set don't write events to the database
 let databaseWriteLocked = false
@@ -157,6 +158,9 @@ function disableDatabaseWriteLock () { databaseWriteLocked = false }
           break
         case 'https://eddn.edcd.io/schemas/navroute/1':
           navRouteEvent(payload)
+          break
+        case 'https://eddn.edcd.io/schemas/approachsettlement/1':
+          approachSettlementEvent(payload)
           break
         default:
       }
