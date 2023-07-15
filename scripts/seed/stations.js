@@ -57,6 +57,9 @@ const USE_ADDITIONAL_RAM = true
   const readStream = fs.createReadStream(SYSTEMS_JSON)
   const rl = readline.createInterface({ input: readStream, crlfDelay: Infinity })
 
+  const systemsNotFound = []
+  const stationsWithNoSystemLocation = []
+
   console.time('Importing stations')
 
   // Using BEGIN/COMMIT is faster but can use a very large amount of disk space
@@ -77,7 +80,8 @@ const USE_ADDITIONAL_RAM = true
       const system = selectSystemByName.get({ systemName: station.systemName })
 
       if (!system) {
-        console.error('Failed to find system', station.systemName)
+        stationsWithNoSystemLocation.push(station.name)
+        if (!systemsNotFound.includes(station.systemName)) systemsNotFound.push(station.systemName)
         continue
       }
 
@@ -113,6 +117,11 @@ const USE_ADDITIONAL_RAM = true
         systemX: system?.systemX ?? null,
         systemY: system?.systemY ?? null,
         systemZ: system?.systemZ ?? null,
+        bodyId: station?.body?.id ?? null,
+        bodyName: station?.body?.name ?? null,
+        latitude: station?.body?.latitude ?? null,
+        longitude: station?.body?.longitude ?? null,
+        landingPadSize: null,
         updatedAt: new Date(station.updateTime.information).toISOString()
       })
 
@@ -135,5 +144,8 @@ const USE_ADDITIONAL_RAM = true
   stationsDb.close()
 
   console.log('Import complete')
+
+  console.log('Missing data:', systemsNotFound, stationsWithNoSystemLocation)
+  console.log(`Failed to location for ${stationsWithNoSystemLocation.length} stations as ${systemsNotFound.length} systems not found`)
   process.exit()
 })()
