@@ -1,11 +1,13 @@
+// This import script is intended to be run *after* importing a list of stations
+// from EDSM data. It is older, but the EDDB data has info that is not in the
+// EDSM dumps, such as station landing pad size.
 const fs = require('fs')
 const readline = require('readline')
-const { insertOrReplaceInto } = require('../../lib/sql-helper')
 const SystemsDatabase = require('../../lib/db/systems-db')
 const StationsDatabase = require('../../lib/db/stations-db')
 
-// Station data seed by ESDM.net nightly dump
-const SYSTEMS_JSON = '../ardent-seed-data/stations.json'
+// Station data seeded from EDDB (before it shut down)
+const SYSTEMS_JSON = '../ardent-seed-data/eddb/stations.jsonl'
 
 // Setting this to true is very fast (100,000 inserts a second) but ONLY safe
 // to do a *new, empty datababase* with nothing else accessing it. If you stop
@@ -57,8 +59,9 @@ const USE_ADDITIONAL_RAM = true
   const readStream = fs.createReadStream(SYSTEMS_JSON)
   const rl = readline.createInterface({ input: readStream, crlfDelay: Infinity })
 
-  const systemsNotFound = []
-  const stationsWithNoSystemLocation = []
+  const updateStationDataByMarketId = stationsDb.prepare(
+    'UPDATE stations SET maxLandingPadSize = @maxLandingPadSize WHERE marketId = @marketId'
+  )
 
   console.time('Importing stations')
 
@@ -77,53 +80,22 @@ const USE_ADDITIONAL_RAM = true
 
     try {
       const station = JSON.parse(line.replace(/,$/, '').trim())
-      const system = selectSystemByName.get({ systemName: station.systemName })
 
-      if (!system) {
-        stationsWithNoSystemLocation.push(station.name)
-        if (!systemsNotFound.includes(station.systemName)) systemsNotFound.push(station.systemName)
-        continue
+
+      let maxLandingPadSize
+      if (station.max_landing_pad_size === 'S') maxLandingPadSize = 1
+      if (station.max_landing_pad_size === 'M') maxLandingPadSize = 2
+      if (station.max_landing_pad_size === 'L') maxLandingPadSize = 3
+
+      const newStationData = {
+        stationName: station.name,
+        marketId: station.ed_market_id,
+        maxLandingPadSize
       }
 
-      insertOrReplaceInto(stationsDb, 'stations', {
-        stationId: station.id,
-        stationName: station.name,
-        marketId: station.marketId,
-        distanceToArrival: station.distanceToArrival,
-        stationType: station.type,
-        allegiance: station.allegiance,
-        government: station.government,
-        controllingFactionId: station?.controllingFaction?.id ?? null,
-        controllingFactionName: station?.controllingFaction?.name ?? null,
-        primaryEconomy: station.economy,
-        secondaryEconomy: station.secondEconomy,
-        shipyard: station.haveShipyard ? 1 : 0,
-        outfitting: station.haveOutfitting ? 1 : 0,
-        blackMarket: station.otherServices.includes('Black Market') ? 1 : 0,
-        contacts: station.otherServices.includes('Contacts') ? 1 : 0,
-        crewLounge: station.otherServices.includes('Crew Lounge') ? 1 : 0,
-        interstellarFactorsContact: station.otherServices.includes('Interstellar Factors Contact') ? 1 : 0,
-        materialTrader: station.otherServices.includes('Material Trader') ? 1 : 0,
-        missions: station.otherServices.includes('Missions') ? 1 : 0,
-        refuel: station.otherServices.includes('Refuel') ? 1 : 0,
-        repair: station.otherServices.includes('Repair') ? 1 : 0,
-        restock: station.otherServices.includes('Restock') ? 1 : 0,
-        searchAndRescue: station.otherServices.includes('Search and Rescue') ? 1 : 0,
-        technologyBroker: station.otherServices.includes('Technology Broker') ? 1 : 0,
-        tuning: station.otherServices.includes('Tuning') ? 1 : 0,
-        universalCartographics: station.otherServices.includes('Universal Cartographics') ? 1 : 0,
-        systemAddress: station.systemId64,
-        systemName: station.systemName,
-        systemX: system?.systemX ?? null,
-        systemY: system?.systemY ?? null,
-        systemZ: system?.systemZ ?? null,
-        bodyId: station?.body?.id ?? null,
-        bodyName: station?.body?.name ?? null,
-        latitude: station?.body?.latitude ?? null,
-        longitude: station?.body?.longitude ?? null,
-        landingPadSize: null,
-        updatedAt: new Date(station.updateTime.information).toISOString()
-      })
+      if (station.ed_market_id) {
+        updateStationDataByMarketId.run(newStationData)
+      }
 
       // Allow other process to run
       await new Promise(setImmediate)
@@ -145,7 +117,6 @@ const USE_ADDITIONAL_RAM = true
 
   console.log('Import complete')
 
-  console.log('Missing data:', systemsNotFound, stationsWithNoSystemLocation)
-  console.log(`Failed to location for ${stationsWithNoSystemLocation.length} stations as ${systemsNotFound.length} systems not found`)
+  console.log(`Loaded ${counter.toLocaleString()} stations`)
   process.exit()
 })()
