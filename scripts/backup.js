@@ -12,7 +12,7 @@ const {
   ARDENT_BACKUP_LOG
 } = require('../lib/consts')
 
-const { systemsDb, tradeDb } = require('../lib/db')
+const { tradeDb, stationsDb, systemsDb } = require('../lib/db')
 
 const MIN_SIZE_IN_BYTES_BACKUP_VALIDATION = 10000000 // 10 MB
 const MIN_ROWS_FOR_BACKUP_VALIDATION = 100
@@ -26,8 +26,9 @@ const MIN_ROWS_FOR_BACKUP_VALIDATION = 100
 
   writeBackupLog(`Starting backup at ${started}`, true)
   /** * PRE-FLIGHT CHECKS  ****/
-  const pathToSystemsDbBackup = path.join(ARDENT_BACKUP_DIR, '/systems.db')
   const pathToTradeDbBackup = path.join(ARDENT_BACKUP_DIR, '/trade.db')
+  const pathToStationsDbBackup = path.join(ARDENT_BACKUP_DIR, '/stations.db')
+  const pathToSystemsDbBackup = path.join(ARDENT_BACKUP_DIR, '/systems.db')
 
   const dataDirSizeInBytes = (os.platform() !== 'win32') ? fastFolderSizeSync(ARDENT_DATA_DIR) : 0
   const freeDiskSpaceInBytes = (await checkDiskSpace(ARDENT_BACKUP_DIR)).free
@@ -48,6 +49,10 @@ const MIN_ROWS_FOR_BACKUP_VALIDATION = 100
   backupDatabase(tradeDb, pathToTradeDbBackup)
   verifyResults.push(verifyBackup(pathToTradeDbBackup, ['commodities']))
 
+  writeBackupLog(`Backing up ${path.basename(pathToStationsDbBackup)}`)
+  backupDatabase(stationsDb, pathToStationsDbBackup)
+  verifyResults.push(verifyBackup(pathToStationsDbBackup, ['stations']))
+
   writeBackupLog(`Backing up ${path.basename(pathToSystemsDbBackup)}`)
   backupDatabase(systemsDb, pathToSystemsDbBackup)
   verifyResults.push(verifyBackup(pathToSystemsDbBackup, ['systems']))
@@ -63,6 +68,7 @@ const MIN_ROWS_FOR_BACKUP_VALIDATION = 100
     backupDir: ARDENT_BACKUP_DIR,
     pathToSystemsDbBackup,
     pathToTradeDbBackup,
+    pathToStationsDbBackup,
     dataDirSizeInBytes,
     freeDiskSpaceInBytes,
     databases: verifyResults,
