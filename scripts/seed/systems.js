@@ -1,3 +1,4 @@
+// @FIXME This script is old and needs to be refactored before it works again
 const fs = require('fs')
 const path = require('path')
 const readline = require('readline')
@@ -51,7 +52,7 @@ const USE_ADDITIONAL_RAM = true
     }
   }
 
-  ensureSystemsTableExists(systemsDb)
+  ensureSystemsTableExists(db)
 
   const insertOrReplaceSystem = systemsDb.prepare(`
     INSERT OR REPLACE INTO systems (
@@ -129,7 +130,7 @@ const USE_ADDITIONAL_RAM = true
   console.timeEnd('Importing systems')
 
   console.time('Creating indexes')
-  ensureSystemsTableIndexesExists(systemsDb)
+  ensureSystemsTableIndexesExists(db)
   console.timeEnd('Creating indexes')
 
   systemsDb.close()
