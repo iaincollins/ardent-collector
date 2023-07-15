@@ -46,10 +46,6 @@ const USE_ADDITIONAL_RAM = true
     }
   }
 
-  const selectSystemByName = systemsDb.prepare(`
-    SELECT * FROM systems WHERE systemName = @systemName COLLATE NOCASE
-  `)
-
   setInterval(() => console.log(`${counter.toLocaleString()} entries processed`), 1000 * 10).unref()
 
   async function sleep (ms) {
