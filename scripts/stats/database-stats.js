@@ -15,7 +15,7 @@ const { systemsDb, stationsDb, tradeDb } = require('../../lib/db')
       (SELECT COUNT(DISTINCT(systemName)) as count FROM commodities) AS tradeSystems,
       (SELECT COUNT(DISTINCT(stationName)) as count FROM commodities WHERE fleetCarrier = 0) AS tradeStations,
       (SELECT COUNT(DISTINCT(stationName)) as count FROM commodities WHERE fleetCarrier = 1) AS tradeCarriers,
-      (SELECT COUNT(*) FROM commodities WHERE updatedAt > @lastHourTimestamp) as lastHourTimestamp,
+      (SELECT COUNT(*) FROM commodities WHERE updatedAt > @lastHourTimestamp) as updatedInLastHour,
       (SELECT COUNT(*) FROM commodities WHERE updatedAt > @last24HoursTimestamp) as updatedInLast24Hours,
       (SELECT COUNT(*) FROM commodities WHERE updatedAt > @last7DaysTimestamp) as updatedInLast7Days,
       (SELECT COUNT(*) FROM commodities WHERE updatedAt > @last30DaysTimestamp) as updatedInLast30Days,
@@ -33,7 +33,7 @@ const { systemsDb, stationsDb, tradeDb } = require('../../lib/db')
   SELECT
     (SELECT COUNT(*) FROM stations WHERE stationType != 'Fleet Carrier') as stations,
     (SELECT COUNT(*) FROM stations WHERE stationType = 'Fleet Carrier') as fleetCarriers,
-    (SELECT COUNT(*) FROM stations WHERE updatedAt > @lastHourTimestamp) as lastHourTimestamp,
+    (SELECT COUNT(*) FROM stations WHERE updatedAt > @lastHourTimestamp) as updatedInLastHour,
     (SELECT COUNT(*) FROM stations WHERE updatedAt > @last24HoursTimestamp) as updatedInLast24Hours,
     (SELECT COUNT(*) FROM stations WHERE updatedAt > @last7DaysTimestamp) as updatedInLast7Days,
     (SELECT COUNT(*) FROM stations WHERE updatedAt > @last30DaysTimestamp) as updatedInLast30Days,
@@ -49,19 +49,35 @@ const { systemsDb, stationsDb, tradeDb } = require('../../lib/db')
   })
   const stats = {
     systems: systemsDb.prepare('SELECT COUNT(*) as count FROM systems').get().count,
+    stations: {
+      stations: stationStats.stations,
+      carriers: stationStats.fleetCarriers,
+      updatedInLastHour: stationStats.updatedInLastHour,
+      updatedInLast24Hours: stationStats.updatedInLast24Hours,
+      updatedInLast7Days: stationStats.updatedInLast7Days,
+      updatedInLast30Days: stationStats.updatedInLast30Days,
+      updatedInLast90Days: stationStats.updatedInLast90Days,
+      updatedMoreThan90DaysAgo: stationStats.updatedMoreThan90DaysAgo
+    },
     trade: {
       systems: commodityStats.tradeSystems,
-      stations: stationStats.stations,
-      fleetCarriers: stationStats.fleetCarriers,
+      stations: commodityStats.tradeStations,
+      carriers: commodityStats.tradeCarriers,
       tradeOrders: commodityStats.tradeOrders,
-      lastHourTimestamp: commodityStats.lastHourTimestamp + stationStats.lastHourTimestamp,
-      updatedInLast24Hours: commodityStats.updatedInLast24Hours + stationStats.updatedInLast24Hours,
-      updatedInLast7Days: commodityStats.updatedInLast7Days + stationStats.updatedInLast7Days,
-      updatedInLast30Days: commodityStats.updatedInLast30Days + stationStats.updatedInLast30Days,
-      updatedInLast90Days: commodityStats.updatedInLast90Days + stationStats.updatedInLast90Days,
-      updatedMoreThan90DaysAgo: commodityStats.updatedMoreThan90DaysAgo + stationStats.updatedMoreThan90DaysAgo,
+      updatedInLastHour: commodityStats.updatedInLastHour,
+      updatedInLast24Hours: commodityStats.updatedInLast24Hours,
+      updatedInLast7Days: stationStats.updatedInLast7Days,
+      updatedInLast30Days: stationStats.updatedInLast30Days,
+      updatedInLast90Days: stationStats.updatedInLast90Days,
+      updatedMoreThan90DaysAgo: stationStats.updatedMoreThan90DaysAgo,
       uniqueCommodities: commodityStats.uniqueCommodities
     },
+    updatedInLastHour: commodityStats.updatedInLastHour + stationStats.updatedInLastHour,
+    updatedInLast24Hours: commodityStats.updatedInLast24Hours + stationStats.updatedInLast24Hours,
+    updatedInLast7Days: commodityStats.updatedInLast7Days + stationStats.updatedInLast7Days,
+    updatedInLast30Days: commodityStats.updatedInLast30Days + stationStats.updatedInLast30Days,
+    updatedInLast90Days: commodityStats.updatedInLast90Days + stationStats.updatedInLast90Days,
+    updatedMoreThan90DaysAgo: commodityStats.updatedMoreThan90DaysAgo + stationStats.updatedMoreThan90DaysAgo,
     timestamp: new Date().toISOString()
   }
   if (!fs.existsSync(ARDENT_CACHE_DIR)) { fs.mkdirSync(ARDENT_CACHE_DIR, { recursive: true }) }
