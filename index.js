@@ -42,8 +42,8 @@ function enableDatabaseWriteLock () { databaseWriteLocked = true }
 function disableDatabaseWriteLock () { databaseWriteLocked = false }
 
 // Ensure payload example dir (and journal examples sub dir) exists
-if (SAVE_PAYLOAD_EXAMPLES === true 
-    && !fs.existsSync(`${PAYLOAD_EXAMPLES_DIR}/journal_1`)) {
+if (SAVE_PAYLOAD_EXAMPLES === true &&
+    !fs.existsSync(`${PAYLOAD_EXAMPLES_DIR}/journal_1`)) {
   fs.mkdirSync(`${PAYLOAD_EXAMPLES_DIR}/journal_1`, { recursive: true })
 }
 

@@ -77,7 +77,6 @@ const USE_ADDITIONAL_RAM = true
     try {
       const station = JSON.parse(line.replace(/,$/, '').trim())
 
-
       let maxLandingPadSize
       if (station.max_landing_pad_size === 'S') maxLandingPadSize = 1
       if (station.max_landing_pad_size === 'M') maxLandingPadSize = 2

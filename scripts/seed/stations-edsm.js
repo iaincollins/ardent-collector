@@ -84,7 +84,7 @@ const USE_ADDITIONAL_RAM = true
         if (!systemsNotFound.includes(station.systemName)) systemsNotFound.push(station.systemName)
       }
 
-      // This is not comprehensive for maxLandingPadSize as but is a good 
+      // This is not comprehensive for maxLandingPadSize as but is a good
       // starting point to augment with data from other sourcs (like EDDB dumps)
       let maxLandingPadSize
       if ([
