@@ -34,6 +34,7 @@ const commodityEvent = require('./lib/event-handlers/commodity-event')
 const discoveryScanEvent = require('./lib/event-handlers/discovery-scan-event')
 const navRouteEvent = require('./lib/event-handlers/navroute-event')
 const approachSettlementEvent = require('./lib/event-handlers/approach-settlement-event')
+const journalEvent = require('./lib/event-handlers/journal-event')
 
 // When this is set don't write events to the database
 let databaseWriteLocked = false
@@ -176,6 +177,7 @@ if (SAVE_PAYLOAD_EXAMPLES === true
           approachSettlementEvent(payload)
           break
         case 'https://eddn.edcd.io/schemas/journal/1':
+          journalEvent(payload)
           break
         default:
       }

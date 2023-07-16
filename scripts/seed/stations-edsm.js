@@ -107,7 +107,6 @@ const USE_ADDITIONAL_RAM = true
         stationType: station.type,
         allegiance: station.allegiance,
         government: station.government,
-        controllingFactionId: station?.controllingFaction?.id ?? null,
         controllingFactionName: station?.controllingFaction?.name ?? null,
         primaryEconomy: station.economy,
         secondaryEconomy: station.secondEconomy,
