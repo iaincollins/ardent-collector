@@ -193,18 +193,32 @@ process.on('uncaughtException', (e) => console.log('Uncaught exception:', e))
 function printStats () {
   const stats = JSON.parse(fs.readFileSync(ARDENT_DATABASE_STATS))
 
-  return `Ardent Collector v${Package.version} Online\n` +
-    '--------------------------\n' +
-    ((stats)
-      ? `Star systems: ${stats.systems.toLocaleString()}\n` +
-        `Trade systems: ${stats.trade.systems.toLocaleString()}\n` +
-        `Trade stations: ${stats.trade.stations.toLocaleString()}\n` +
-        `Trade carriers: ${stats.trade.fleetCarriers.toLocaleString()}\n` +
-        `Trade orders: ${stats.trade.tradeOrders.toLocaleString()}\n` +
-        `Trade updates in last 24 hours: ${stats.trade.updatedInLast24Hours.toLocaleString()}\n` +
-        `Trade updates in last 7 days: ${stats.trade.updatedInLast7Days.toLocaleString()}\n` +
-        `Trade updates in last 30 days: ${stats.trade.updatedInLast30Days.toLocaleString()}\n` +
-        `Unique commodities: ${stats.trade.uniqueCommodities.toLocaleString()}\n` +
-        `Stats last updated: ${stats.timestamp} (updated every 15 mimutes)`
-      : 'Stats not generated yet')
+  try {
+    return `Ardent Collector v${Package.version} Online\n` +
+      '--------------------------\n' +
+      ((stats)
+        ? 'Systems:\n' +
+          `* Star systems: ${stats.systems.toLocaleString()}\n` +
+          'Stations:\n' +
+          `* Stations: ${stats.stations.stations.toLocaleString()}\n` +
+          `* Fleet Carriers: ${stats.stations.carriers.toLocaleString()}\n` +
+          `* Station updates in last hour: ${stats.stations.updatedInLastHour.toLocaleString()}\n` +
+          `* Station updates in last 24 hours: ${stats.stations.updatedInLast24Hours.toLocaleString()}\n` +
+          `* Station updates in last 7 days: ${stats.stations.updatedInLast7Days.toLocaleString()}\n` +
+          `* Station updates in last 30 days: ${stats.stations.updatedInLast30Days.toLocaleString()}\n` +
+          'Trade:\n' +
+          `* Station Markets: ${stats.trade.stations.toLocaleString()}\n` +
+          `* Fleet Carrier Markets: ${stats.trade.carriers.toLocaleString()}\n` +
+          `* Trade systems: ${stats.trade.systems.toLocaleString()}\n` +
+          `* Trade orders: ${stats.trade.tradeOrders.toLocaleString()}\n` +
+          `* Trade updates in last hour: ${stats.trade.updatedInLastHour.toLocaleString()}\n` +
+          `* Trade updates in last 24 hours: ${stats.trade.updatedInLast24Hours.toLocaleString()}\n` +
+          `* Trade updates in last 7 days: ${stats.trade.updatedInLast7Days.toLocaleString()}\n` +
+          `* Trade updates in last 30 days: ${stats.trade.updatedInLast30Days.toLocaleString()}\n` +
+          `* Unique commodities: ${stats.trade.uniqueCommodities.toLocaleString()}\n` +
+          `Stats last updated: ${stats.timestamp} (updated every 15 minutes)`
+        : 'Stats not generated yet')
+  } catch (e) {
+    return 'Error: Could not load stats'
+  }
 }

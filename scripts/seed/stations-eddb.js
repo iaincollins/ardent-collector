@@ -3,7 +3,6 @@
 // EDSM dumps, such as station landing pad size.
 const fs = require('fs')
 const readline = require('readline')
-const SystemsDatabase = require('../../lib/db/systems-db')
 const StationsDatabase = require('../../lib/db/stations-db')
 
 // Station data seeded from EDDB (before it shut down)
@@ -24,7 +23,6 @@ const USE_ADDITIONAL_RAM = true
 ;(async () => {
   let counter = 0
 
-  const systemsDb = SystemsDatabase.getDatabase()
   const stationsDb = StationsDatabase.getDatabase()
   StationsDatabase.ensureTables()
 
