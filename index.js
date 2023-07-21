@@ -197,8 +197,9 @@ function printStats () {
     return `Ardent Collector v${Package.version} Online\n` +
       '--------------------------\n' +
       ((stats)
-        ? 'Systems:\n' +
+        ? 'Locations:\n' +
           `* Star systems: ${stats.systems.toLocaleString()}\n` +
+          `* Points of interest: ${stats.pointsOfInterest.toLocaleString()}\n` +
           'Stations:\n' +
           `* Stations: ${stats.stations.stations.toLocaleString()}\n` +
           `* Fleet Carriers: ${stats.stations.carriers.toLocaleString()}\n` +

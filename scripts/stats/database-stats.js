@@ -49,6 +49,7 @@ const { systemsDb, stationsDb, tradeDb } = require('../../lib/db')
   })
   const stats = {
     systems: systemsDb.prepare('SELECT COUNT(*) as count FROM systems').get().count,
+    pointsOfInterest: stationsDb.prepare('SELECT COUNT(*) as count FROM locations').get().count,
     stations: {
       stations: stationStats.stations,
       carriers: stationStats.fleetCarriers,
