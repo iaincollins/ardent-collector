@@ -1,7 +1,7 @@
 const fs = require('fs')
 const { ARDENT_CACHE_DIR, ARDENT_DATABASE_STATS } = require('../../lib/consts')
 const { getISOTimestamp } = require('../../lib/utils/dates')
-const { systemsDb, stationsDb, tradeDb } = require('../../lib/db')
+const { systemsDb, locationsDb, stationsDb, tradeDb } = require('../../lib/db')
 
 ;(async () => {
   const dateTimeOneHourAgo = new Date(new Date().setHours(new Date().getHours() - 1)).toISOString()
@@ -49,7 +49,7 @@ const { systemsDb, stationsDb, tradeDb } = require('../../lib/db')
   })
   const stats = {
     systems: systemsDb.prepare('SELECT COUNT(*) as count FROM systems').get().count,
-    pointsOfInterest: stationsDb.prepare('SELECT COUNT(*) as count FROM locations').get().count,
+    pointsOfInterest: locationsDb.prepare('SELECT COUNT(*) as count FROM locations').get().count,
     stations: {
       stations: stationStats.stations,
       carriers: stationStats.fleetCarriers,

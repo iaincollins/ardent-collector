@@ -13,6 +13,9 @@ const {
 
   console.time('Backups restored')
 
+  const pathToLocationsDbBackup = path.join(ARDENT_BACKUP_DIR, '/locations.db')
+  const pathToLocationsDbLive = path.join(ARDENT_DATA_DIR, '/locations.db')
+
   const pathToTradeDbBackup = path.join(ARDENT_BACKUP_DIR, '/trade.db')
   const pathToTradeDbLive = path.join(ARDENT_DATA_DIR, '/trade.db')
 
@@ -24,6 +27,7 @@ const {
 
   if (!fs.existsSync(ARDENT_DATA_DIR)) { fs.mkdirSync(ARDENT_DATA_DIR, { recursive: true }) }
 
+  restoreDatabaseFromBackup(pathToLocationsDbBackup, pathToLocationsDbLive)
   restoreDatabaseFromBackup(pathToTradeDbBackup, pathToTradeDbLive)
   restoreDatabaseFromBackup(pathToStationsDbBackup, pathToStationsLive)
   restoreDatabaseFromBackup(pathToSystemsDbBackup, pathToSystemsDbLive)
