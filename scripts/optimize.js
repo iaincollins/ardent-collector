@@ -1,4 +1,4 @@
-const { systemsDb, tradeDb } = require('../lib/db')
+const { systemsDb, locationsDb, stationsDb, tradeDb } = require('../lib/db')
 
 // Using 'VACUUM' can be very slow and use up to 2x the disk space when running.
 //
@@ -8,6 +8,24 @@ const { systemsDb, tradeDb } = require('../lib/db')
 // backup (which will use VACCUM INTO, which is faster) and then restore from
 // that backup, as the backup created in VACCUM INTO will be fully optimized.
 const FULL_VACCUM = false
+
+console.time('Optimize locationsDb')
+if (FULL_VACCUM === true) locationsDb.exec('VACUUM')
+locationsDb.pragma('wal_checkpoint(TRUNCATE)')
+locationsDb.pragma('optimize')
+locationsDb.pragma('analysis_limit=0')
+locationsDb.exec('ANALYZE')
+locationsDb.close()
+console.timeEnd('Optimize locationsDb')
+
+console.time('Optimize stationsDb')
+if (FULL_VACCUM === true) stationsDb.exec('VACUUM')
+stationsDb.pragma('wal_checkpoint(TRUNCATE)')
+stationsDb.pragma('optimize')
+stationsDb.pragma('analysis_limit=0')
+stationsDb.exec('ANALYZE')
+stationsDb.close()
+console.timeEnd('Optimize stationsDb')
 
 console.time('Optimize tradeDb')
 if (FULL_VACCUM === true) tradeDb.exec('VACUUM')
