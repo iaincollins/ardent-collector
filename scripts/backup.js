@@ -14,7 +14,8 @@ const {
 
 const { locationsDb, tradeDb, stationsDb, systemsDb } = require('../lib/db')
 
-const MIN_SIZE_IN_BYTES_BACKUP_VALIDATION = 10000000 // 10 MB
+const TEN_KB_IN_BYTES = 10000
+const TEN_MB_IN_BYTES = 10000000
 const MIN_ROWS_FOR_BACKUP_VALIDATION = 100
 
 ;(async () => {
@@ -48,19 +49,19 @@ const MIN_ROWS_FOR_BACKUP_VALIDATION = 100
 
   writeBackupLog(`Backing up ${path.basename(pathToLocationsDbBackup)}`)
   backupDatabase(locationsDb, pathToLocationsDbBackup)
-  verifyResults.push(verifyBackup(pathToLocationsDbBackup, ['locations']))
+  verifyResults.push(verifyBackup(pathToLocationsDbBackup, ['locations'], TEN_KB_IN_BYTES))
 
   writeBackupLog(`Backing up ${path.basename(pathToTradeDbBackup)}`)
   backupDatabase(tradeDb, pathToTradeDbBackup)
-  verifyResults.push(verifyBackup(pathToTradeDbBackup, ['commodities']))
+  verifyResults.push(verifyBackup(pathToTradeDbBackup, ['commodities'], TEN_MB_IN_BYTES))
 
   writeBackupLog(`Backing up ${path.basename(pathToStationsDbBackup)}`)
   backupDatabase(stationsDb, pathToStationsDbBackup)
-  verifyResults.push(verifyBackup(pathToStationsDbBackup, ['stations']))
+  verifyResults.push(verifyBackup(pathToStationsDbBackup, ['stations'], TEN_MB_IN_BYTES))
 
   writeBackupLog(`Backing up ${path.basename(pathToSystemsDbBackup)}`)
   backupDatabase(systemsDb, pathToSystemsDbBackup)
-  verifyResults.push(verifyBackup(pathToSystemsDbBackup, ['systems']))
+  verifyResults.push(verifyBackup(pathToSystemsDbBackup, ['systems'], TEN_MB_IN_BYTES))
 
   console.timeEnd('Backup complete')
   writeBackupLog(`Completed backup at ${new Date().toISOString()}`)
@@ -106,11 +107,11 @@ function backupDatabase (dbToBackup, pathToBackupTargetLocation) {
   console.timeEnd(`Backed up ${path.basename(pathToBackupTargetLocation)}`)
 }
 
-function verifyBackup (pathToBackupTargetLocation, tables) {
+function verifyBackup (pathToBackupTargetLocation, tables, minDbSizeInBytes) {
   console.time(`Verified backup of ${path.basename(pathToBackupTargetLocation)}`)
   const { size: dbSize } = fs.statSync(pathToBackupTargetLocation)
   writeBackupLog(`Backup of ${path.basename(pathToBackupTargetLocation)} is ${byteSize(dbSize)} (${dbSize} bytes)`)
-  if (dbSize < MIN_SIZE_IN_BYTES_BACKUP_VALIDATION) { throw Error(`${pathToBackupTargetLocation} file size smaller than expected`) }
+  if (dbSize < minDbSizeInBytes) { throw Error(`${pathToBackupTargetLocation} file size smaller than expected`) }
 
   // Open connection to DB and set Write Ahead Log mode on it
   const db = new SqlLiteDatabase(pathToBackupTargetLocation)
