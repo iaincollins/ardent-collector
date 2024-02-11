@@ -2,18 +2,16 @@
 
 ## About this software
 
-The Ardent Collector saves data submitted to the Elite Dangerous Data Network.
+The Ardent Collector gathers data submitted to the Elite Dangerous Data Network.
 
-It contains details for over 100,000,000 star systems and over 10,000,000 trade
-orders for commodities traded in stations, ports and in fleet carriers 
-throughout the galaxy.
+Ardent has details for over 110,000,000 star systems, over 30,000,000 trade 
+orders for commodities and information on over 300,000 stations, ports, 
+settlements and fleet carriers throughout the galaxy.
 
 The Ardent Collector writes data it gathers to relational databases and 
 generates reports from the data (e.g. summaries of commodity supply and demand 
-and trade reports for different regions).
-
-The data collected can be accessed by the 
-[Ardent API](https://github.com/iaincollins/ardent-api).
+and trade reports for different regions) and provides access to the data via 
+the [Ardent API](https://github.com/iaincollins/ardent-api) and raw data dumps.
 
 ## Credits
 
