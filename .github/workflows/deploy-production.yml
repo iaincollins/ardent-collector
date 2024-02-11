@@ -30,7 +30,6 @@ name: Deploy Ardent Collector to Production
 #  pm2 start npm --name "$SERVICE_NAME" -- run start
 #  pm2 save
 
-
 on:
   push:
     branches: [ "main" ]
