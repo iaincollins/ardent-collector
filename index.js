@@ -116,7 +116,7 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
 
         disableDatabaseWriteLock()() // Mark database as open for writing again
 
-        // Generating stats and trade reports takes about 10 minute. It does not
+        // Generating stats and trade reports takes about 10 minutes. It does not
         // block anything but the queries are quite heavy as they involve
         // scanning and performing analysis on the entire trading database so we
         // only do it once a day.
@@ -127,9 +127,11 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
     })
   })
 
-  // Generate stats every 15 minutes. Takes less than 30 seconds in production.
-  // @TODO Could replace with triggers on tables (but might be complex…)
-  cron.schedule('0 */15 * * * *', () => {
+  // Generate stats every so often. Takes less than 30 seconds in production.
+  // @TODO Could replace with triggers on tables
+  // Note: Dropping down from every 15 min to once an hour to see if that 
+  // helps with an intermittent performance issue I'm seeing in prod.
+  cron.schedule('0 0 * * * *', () => {
     exec('npm run database-stats', (error, stdout, stderr) => {
       if (error) console.error(error)
     })
@@ -208,8 +210,8 @@ function printStats () {
           `* Station updates in last 7 days: ${stats.stations.updatedInLast7Days.toLocaleString()}\n` +
           `* Station updates in last 30 days: ${stats.stations.updatedInLast30Days.toLocaleString()}\n` +
           'Trade:\n' +
-          `* Station Markets: ${stats.trade.stations.toLocaleString()}\n` +
-          `* Fleet Carrier Markets: ${stats.trade.carriers.toLocaleString()}\n` +
+          `* Station markets: ${stats.trade.stations.toLocaleString()}\n` +
+          `* Fleet Carrier markets: ${stats.trade.carriers.toLocaleString()}\n` +
           `* Trade systems: ${stats.trade.systems.toLocaleString()}\n` +
           `* Trade orders: ${stats.trade.tradeOrders.toLocaleString()}\n` +
           `* Trade updates in last hour: ${stats.trade.updatedInLastHour.toLocaleString()}\n` +
