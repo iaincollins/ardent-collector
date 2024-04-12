@@ -114,7 +114,7 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
       exec('npm run backup', (error, stdout, stderr) => {
         if (error) console.error(error)
 
-        disableDatabaseWriteLock()() // Mark database as open for writing again
+        disableDatabaseWriteLock() // Mark database as open for writing again
 
         // Generating stats and trade reports takes about 10 minutes. It does not
         // block anything but the queries are quite heavy as they involve
@@ -127,10 +127,9 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
     })
   })
 
-  // Generate stats every so often. Takes less than 30 seconds in production.
-  // @TODO Could replace with triggers on tables
-  // Note: Dropping down from every 15 min to once an hour to see if that 
-  // helps with an intermittent performance issue I'm seeing in prod.
+  // Generate high level db stats like total star systems, trade orders, etc.
+  // Takes about 30 seconds to run.
+  // @TODO Replace with triggers on tables?
   cron.schedule('0 0 * * * *', () => {
     exec('npm run database-stats', (error, stdout, stderr) => {
       if (error) console.error(error)
