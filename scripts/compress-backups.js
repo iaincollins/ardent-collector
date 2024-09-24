@@ -1,37 +1,24 @@
 const path = require('path')
 const fs = require('fs')
 const { execSync } = require('child_process')
-const crypto = require('crypto')
+const getFileHash = require('../lib/utils/get-file-hash')
 const byteSize = require('byte-size')
 
 const { ARDENT_BACKUP_DIR } = require('../lib/consts')
 
-const pathToLocationsDbBackup = path.join(ARDENT_BACKUP_DIR, '/locations.db')
-const pathToTradeDbBackup = path.join(ARDENT_BACKUP_DIR, '/trade.db')
-const pathToStationsDbBackup = path.join(ARDENT_BACKUP_DIR, '/stations.db')
-const pathToSystemsDbBackup = path.join(ARDENT_BACKUP_DIR, '/systems.db')
+const pathToBackupDownloadManifest = path.join(ARDENT_BACKUP_DIR, 'backup-downloads.json')
 
-async function getFileHash (pathToFile) {
-  return await new Promise((resolve, reject) => {
-    const hash = crypto.createHash('sha256')
-    const rs = fs.createReadStream(pathToFile)
-    rs.on('error', reject)
-    rs.on('data', chunk => hash.update(chunk))
-    rs.on('end', () => resolve(hash.digest('hex')))
-  })
- }
+const databasesToBackup = [
+  path.join(ARDENT_BACKUP_DIR, '/locations.db'),
+  path.join(ARDENT_BACKUP_DIR, '/trade.db'),
+  path.join(ARDENT_BACKUP_DIR, '/stations.db'),
+  path.join(ARDENT_BACKUP_DIR, '/systems.db')
+]
 
- ;(async () => {
+;(async () => {
   console.log('Compressing backups …')
   console.time('Compressed backups')
-  const compressedBackups = {}
-
-  const databasesToBackup = [
-    pathToLocationsDbBackup,
-    pathToTradeDbBackup,
-    pathToStationsDbBackup,
-    pathToSystemsDbBackup
-  ]
+  const backupDownloadManifest = {}
 
   for (const pathToDatabase of databasesToBackup) {
     console.log(`Compressing ${path.basename(pathToDatabase)} …`)
@@ -47,7 +34,7 @@ async function getFileHash (pathToFile) {
     console.log(`Created ${path.basename(pathToOutput)} (${byteSize(newSize)}), saved ${byteSize(oldSize - newSize)}`)
     console.timeEnd(`Compressed ${path.basename(pathToDatabase)}`)
     try {
-      compressedBackups[path.basename(pathToDatabase)] = {
+      backupDownloadManifest[path.basename(pathToDatabase)] = {
         name: path.basename(pathToDatabase),
         url: `https://downloads.ardent-industry.com/${path.basename(pathToOutput)}`,
         size: newSize,
@@ -60,7 +47,8 @@ async function getFileHash (pathToFile) {
   }
 
   // Update list of compressed backups avalible for download
-  fs.writeFileSync(path.join(ARDENT_BACKUP_DIR, 'backup-downloads.json'), JSON.stringify(compressedBackups, null, 2))
+  fs.writeFileSync(pathToBackupDownloadManifest, JSON.stringify(backupDownloadManifest, null, 2))
+  console.log(`Saved backup download manifest to ${pathToBackupDownloadManifest}`)
 
   console.timeEnd('Compressed backups')
 
