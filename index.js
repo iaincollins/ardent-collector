@@ -73,7 +73,7 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
   socket.subscribe('')
   console.log('Connected to EDDN')
 
-  // If a backup log does not exist, being a backup immediately
+  // If a backup log does not exist, begin a backup immediately
   if (!fs.existsSync(ARDENT_BACKUP_LOG)) {
     console.log('No backup log found, starting backup now')
     enableDatabaseWriteLock()

@@ -64,11 +64,15 @@ const MIN_ROWS_FOR_BACKUP_VALIDATION = 100
   backupDatabase(systemsDb, pathToSystemsDbBackup)
   verifyResults.push(verifyBackup(pathToSystemsDbBackup, ['systems'], TEN_MB_IN_BYTES))
 
+  // Temporarily leaving backup compression disabled, as needs to be de-coupled
+  // from the main backup job, to avoid exending the main backup task runtime.
+  /*
   const compressedBackups = []
   compressedBackups.push(compressDatabase(pathToLocationsDbBackup))
   compressedBackups.push(compressDatabase(pathToTradeDbBackup))
   compressedBackups.push(compressDatabase(pathToStationsDbBackup))
   compressedBackups.push(compressDatabase(pathToSystemsDbBackup))
+  */
 
   console.timeEnd('Backup complete')
   writeBackupLog(`Completed backup at ${new Date().toISOString()}`)
@@ -86,7 +90,7 @@ const MIN_ROWS_FOR_BACKUP_VALIDATION = 100
     dataDirSizeInBytes,
     freeDiskSpaceInBytes,
     databases: verifyResults,
-    compressedBackups,
+    // compressedBackups,
     timestamp: new Date().toISOString()
   }
   fs.writeFileSync(path.join(ARDENT_DATA_DIR, 'backup.json'), JSON.stringify(backupReport, null, 2))
