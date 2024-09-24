@@ -127,9 +127,10 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
     })
   })
 
-  // Generate high level db stats like total star systems, trade orders, etc.
-  // Takes about 30 seconds to run.
-  // @TODO Replace with triggers on tables?
+  // Generate high level stats like total star systems, trade orders, etc.
+  // Takes about 20s to run in test but 1m 30s in production due to load.
+  // @TODO Could maybe be real time if replaced with triggers on tables,
+  // or a best-effort internal counter that tracks changes between updates.
   cron.schedule('0 0 * * * *', () => {
     exec('npm run database-stats', (error, stdout, stderr) => {
       if (error) console.error(error)
@@ -218,7 +219,7 @@ function printStats () {
           `* Trade updates in last 7 days: ${stats.trade.updatedInLast7Days.toLocaleString()}\n` +
           `* Trade updates in last 30 days: ${stats.trade.updatedInLast30Days.toLocaleString()}\n` +
           `* Unique commodities: ${stats.trade.uniqueCommodities.toLocaleString()}\n` +
-          `Stats last updated: ${stats.timestamp} (updated every 15 minutes)`
+          `Stats last updated: ${stats.timestamp}`
         : 'Stats not generated yet')
   } catch (e) {
     return 'Error: Could not load stats'

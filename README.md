@@ -13,6 +13,23 @@ generates reports from the data (e.g. summaries of commodity supply and demand
 and trade reports for different regions) and provides access to the data via 
 the [Ardent API](https://github.com/iaincollins/ardent-api) and raw data dumps.
 
+## Notes
+
+This software assumes an internet connection as it attempts to connect to the 
+the EDDN (Elite Dangerous Data Network) ZeroMQ instance at 
+tcp://eddn.edcd.io:9500 at startup to receive a data stream.
+
+Because of this, and other dependancies, it is build against Node.js v18.x,
+an older LTS release that is end-of-life 2025-04-30 and may not work with 
+other versions of Node.js.
+
+After doing `npm install` you can run the service with `npm start`.
+
+You may need to run additional commands like `npm run commodity-stats` and 
+`npm run database-stats` to generate at least once to avoid errors, but the 
+process will run these automatically if left running for long enough (they 
+are scheduled tasks that run periodically).
+
 ## Credits
 
 _This software would not be possible without work from dozens of enthusiasts 
