@@ -123,6 +123,15 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
         exec('npm run commodity-stats', (error, stdout, stderr) => {
           if (error) console.error(error)
         })
+
+        // Generate compressed versions of the backups (suitable for download)
+        // in the background. This uses gzip on the newly created backup files.
+        // It can take around 15 minutes but does not impact the live database.
+        // Downloads of backups during the maintaince window may fail when the
+        // backup images are updated. 
+        exec('npm run compress-backups', (error, stdout, stderr) => {
+          if (error) console.error(error)
+        })
       })
     })
   })
