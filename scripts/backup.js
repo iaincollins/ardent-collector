@@ -5,6 +5,7 @@ const checkDiskSpace = require('check-disk-space').default
 const fastFolderSizeSync = require('fast-folder-size/sync')
 const byteSize = require('byte-size')
 const SqlLiteDatabase = require('better-sqlite3')
+const { execSync } = require('child_process')
 
 const {
   ARDENT_DATA_DIR,
@@ -63,6 +64,12 @@ const MIN_ROWS_FOR_BACKUP_VALIDATION = 100
   backupDatabase(systemsDb, pathToSystemsDbBackup)
   verifyResults.push(verifyBackup(pathToSystemsDbBackup, ['systems'], TEN_MB_IN_BYTES))
 
+  const compressedBackups = []
+  compressedBackups.push(compressDatabase(pathToLocationsDbBackup))
+  compressedBackups.push(compressDatabase(pathToTradeDbBackup))
+  compressedBackups.push(compressDatabase(pathToStationsDbBackup))
+  compressedBackups.push(compressDatabase(pathToSystemsDbBackup))
+
   console.timeEnd('Backup complete')
   writeBackupLog(`Completed backup at ${new Date().toISOString()}`)
 
@@ -79,6 +86,7 @@ const MIN_ROWS_FOR_BACKUP_VALIDATION = 100
     dataDirSizeInBytes,
     freeDiskSpaceInBytes,
     databases: verifyResults,
+    compressedBackups,
     timestamp: new Date().toISOString()
   }
   fs.writeFileSync(path.join(ARDENT_DATA_DIR, 'backup.json'), JSON.stringify(backupReport, null, 2))
@@ -134,4 +142,23 @@ function verifyBackup (pathToBackupTargetLocation, tables, minDbSizeInBytes) {
   console.timeEnd(`Verified backup of ${path.basename(pathToBackupTargetLocation)}`)
 
   return result
+}
+
+function compressDatabase(pathToDatabase) {
+  console.log(`Compressing ${path.basename(pathToDatabase)} …`)
+  console.time(`Compressed ${path.basename(pathToDatabase)}`)
+  const pathToOutput = `${pathToDatabase}.gz`
+  const pathToTmpOutput = `${pathToDatabase}.tmp.gz`
+  execSync(`gzip -cf ${pathToDatabase} > ${pathToTmpOutput}`, (error, stdout, stderr) => {
+    if (error) console.error(error)
+  })
+  fs.renameSync(pathToTmpOutput,pathToOutput)
+  const { size: oldSize } = fs.statSync(pathToDatabase)
+  const { size: newSize } = fs.statSync(pathToOutput)
+  console.log(`Saved compressed backup to ${path.basename(pathToOutput)} (${byteSize(newSize)}), saved ${byteSize(oldSize - newSize)}`)
+  console.timeEnd(`Compressed ${path.basename(pathToDatabase)}`)
+  return {
+    name: path.basename(pathToOutput),
+    size: newSize
+  }
 }
