@@ -1,8 +1,11 @@
 const path = require('path')
 const fs = require('fs')
-const { execSync } = require('child_process')
 const getFileHash = require('../lib/utils/get-file-hash')
 const byteSize = require('byte-size')
+const zlib = require('zlib')
+const stream = require('stream')
+const { promisify } = require('util')
+const pipeline = promisify(stream.pipeline)
 
 const { ARDENT_BACKUP_DIR } = require('../lib/consts')
 
@@ -23,12 +26,18 @@ const databasesToBackup = [
   for (const pathToDatabase of databasesToBackup) {
     console.log(`Compressing ${path.basename(pathToDatabase)} …`)
     console.time(`Compressed ${path.basename(pathToDatabase)}`)
+
+    // Note: Does not overwrite existing compressed version until the new
+    // version has been created so that the switch over is atomic
     const pathToOutput = `${pathToDatabase}.gz`
     const pathToTmpOutput = `${pathToDatabase}.tmp.gz`
-    execSync(`gzip -cf ${pathToDatabase} > ${pathToTmpOutput}`, (error, stdout, stderr) => {
-      if (error) console.error(error)
-    })
+    await pipeline(
+      fs.createReadStream(pathToDatabase),
+      zlib.createGzip(),
+      fs.createWriteStream(pathToTmpOutput)
+    )
     fs.renameSync(pathToTmpOutput,pathToOutput)
+
     const { size: oldSize } = fs.statSync(pathToDatabase)
     const { size: newSize, ctime: created } = fs.statSync(pathToOutput)
     console.log(`Created ${path.basename(pathToOutput)} (${byteSize(newSize)}), saved ${byteSize(oldSize - newSize)}`)

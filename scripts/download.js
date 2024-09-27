@@ -2,7 +2,11 @@ const fs = require('fs')
 const { mkdir, rm } = require('fs/promises')
 const { Readable } = require('stream')
 const { finished } = require('stream/promises')
-const { execSync } = require('child_process')
+const zlib = require('zlib')
+const stream = require('stream')
+const { promisify } = require('util')
+const pipeline = promisify(stream.pipeline)
+
 const path = require('path')
 const byteSize = require('byte-size')
 const getFileHash = require('../lib/utils/get-file-hash')
@@ -52,9 +56,11 @@ function syncToDataDir (copyFrom, copyTo) {
 
     console.log(`Uncompressing ${path.basename(file.url)} …`)
     console.time(`Uncompressed ${path.basename(file.url)}`)
-    execSync(`gzip -df ${pathToDownload}`, (error, stdout, stderr) => {
-      if (error) console.error(error)
-    })
+    await pipeline(
+      fs.createReadStream(pathToDownload),
+      zlib.createGunzip(),
+      fs.createWriteStream(pathToUncompressedFile)
+    )
     const { size } = fs.statSync(pathToUncompressedFile)
     console.log(`Uncompressed file size is ${(byteSize(size))}`)
     console.timeEnd(`Uncompressed ${path.basename(file.url)}`)
