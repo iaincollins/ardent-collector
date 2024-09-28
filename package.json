@@ -1,6 +1,6 @@
 {
   "name": "ardent-collector",
-  "version": "1.54.2",
+  "version": "1.54.3",
   "description": "Ardent Collector saves data submitted to EDDN",
   "main": "index.js",
   "scripts": {
@@ -42,8 +42,8 @@
   "devDependencies": {
     "standard": "^17.1.0"
   },
-  "engines" : { 
-    "npm" : "9.5.1",
-    "node" : "18.16.x"
+  "engines": { 
+    "npm": "9.5.1",
+    "node": "18.17.1"
   }
 }
