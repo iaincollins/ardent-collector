@@ -120,7 +120,7 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
         // block anything but the queries are quite heavy as they involve
         // scanning and performing analysis on the entire trading database so we
         // only do it once a day.
-        exec('npm run commodity-stats', (error, stdout, stderr) => {
+        exec('npm run stats:commodity', (error, stdout, stderr) => {
           if (error) console.error(error)
         })
 
@@ -129,7 +129,7 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
         // It can take around 15 minutes but does not impact the live database.
         // Downloads of backups during the maintaince window may fail when the
         // backup images are updated. 
-        exec('npm run compress-backups', (error, stdout, stderr) => {
+        exec('npm run backup:compress', (error, stdout, stderr) => {
           if (error) console.error(error)
         })
       })
@@ -141,7 +141,7 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
   // @TODO Could maybe be real time if replaced with triggers on tables,
   // or a best-effort internal counter that tracks changes between updates.
   cron.schedule('0 0 * * * *', () => {
-    exec('npm run database-stats', (error, stdout, stderr) => {
+    exec('npm run stats:database', (error, stdout, stderr) => {
       if (error) console.error(error)
     })
   })

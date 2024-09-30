@@ -25,10 +25,9 @@ other versions of Node.js.
 
 After doing `npm install` you can run the service with `npm start`.
 
-You may need to run additional commands like `npm run commodity-stats` and 
-`npm run database-stats` to generate at least once to avoid errors, but the 
-process will run these automatically if left running for long enough (they 
-are scheduled tasks that run periodically).
+You may need to run `npm run stats` to generate at least once to avoid errors,
+but these will automatically if left running for long enough (they are scheduled
+tasks that run periodically, at least once a day).
 
 ## Credits
 
