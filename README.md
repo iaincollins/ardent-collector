@@ -13,6 +13,12 @@ generates reports from the data (e.g. summaries of commodity supply and demand
 and trade reports for different regions) and provides access to the data via 
 the [Ardent API](https://github.com/iaincollins/ardent-api) and raw data dumps.
 
+More information about Ardent:
+
+* https://github.com/iaincollins/ardent-www
+* https://github.com/iaincollins/ardent-api
+* https://github.com/iaincollins/ardent-auth
+
 ## Notes
 
 This software assumes an internet connection as it attempts to connect to the 
