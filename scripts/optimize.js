@@ -1,5 +1,6 @@
 const { systemsDb, locationsDb, stationsDb, tradeDb } = require('../lib/db')
-
+const { getISOTimestamp } = require('../lib/utils/dates')
+const { TRADE_DATA_MAX_AGE_DAYS } = require('../lib/consts')
 // Using 'VACUUM' can be very slow and use up to 2x the disk space when running.
 //
 // It is superior at optimization than relying on the optimize command, but in
@@ -28,7 +29,12 @@ stationsDb.close()
 console.timeEnd('Optimize stationsDb')
 
 console.time('Optimize tradeDb')
-if (FULL_VACCUM === true) tradeDb.exec('VACUUM')
+// Purge old trade data
+// tradeDb.exec(`
+//   DELETE FROM commodities WHERE updatedAt <= '${getISOTimestamp(`-${TRADE_DATA_MAX_AGE_DAYS}`)}'
+// `)
+// Always vacuum the trade database after deleting old data to shrink it's size
+// tradeDb.exec('VACUUM')
 tradeDb.pragma('wal_checkpoint(TRUNCATE)')
 tradeDb.pragma('optimize')
 tradeDb.pragma('analysis_limit=0')
