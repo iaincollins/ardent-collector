@@ -73,7 +73,7 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
   socket.subscribe('')
   console.log('Connected to EDDN')
 
-  // If a backup log does not exist, begin a backup immediately
+  // If a backup log does not exist, create a new backup immediately
   if (!fs.existsSync(ARDENT_BACKUP_LOG)) {
     console.log('No backup log found, starting backup now')
     enableDatabaseWriteLock()
@@ -85,32 +85,60 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
     console.log('Found existing backup log')
   }
 
-  // Run a task every day to do database maintenance and backups at 07:15 UTC.
+  // The maintenance window is offically from 06:00 to 08:00 BST every day.
   //
-  // Both optimization and backup block writing to the database so ideally
-  // requests should be buffered during that time, but it's a short window
-  // of 5-6 minutes every day and it happens during a quiet period so it's not
-  // been a priority to handle a few missing updates.
+  // During the maintenance window the API and website continue running and
+  // performance of them should not be impacted.
   //
-  // During the maintenance window the API and website continue running.
+  // THE SCHEDULE:
+  //
+  // 1. Start of maintenance window at 06:00 BST.
+  // 2. Database optimization and backup tasks are started at 06:15 BST.
+  // 3. Optimization takes around 1-2 minutes and the backup job takes
+  //    around 10-15 minutes - we pause ingesting from EDDN until both
+  //    those tasks are complete (around 15 minutes in total).
+  // 4. The Ardent Collector service resumes processing updates and some
+  //    daily trade reports are generated (e.g. lists of best buy/sell 
+  //    prices for different commodities in different regions).
+  // 5. Archiving/compressing of backups then starts in the background.
+  //    The entire archiving process takes around 30 minutes.
+  //    The downloadable daily backups are updated as so as the new data
+  //    is ready, attempting to download backups during the maintenance
+  //    window is not recommended.
+  // 6. At 07:15 BST the Ardent API service is restarted (see notes below).
+  // 7. At 07:45 BST the Ardent Collector - this service - is restarted.
+  // 8. End of maintenance window at 08:00 BST.
+  //
+  // NOTES:
+  //
+  // WHY PROCESS ARE RESTARTED:
+  //
+  // With SQLite only connections opened after optimization take advantage
+  // of optimization runs so services that connect to the database - the 
+  // Collector and the API - are automatically restarted by the `pm2`
+  // process manager. The website does not talk to the database directly
+  // and does not need to be restarted.
+  //
+  // WHY WRITING TO THE DATABASE IS PAUSED:
+  //
+  // Both optimization and backup tasks block writing to the database and ideally
+  // requests would be buffered during that time, but it's a short window
+  // of a few minutes in the morning every day and it happens during a quiet
+  // period so it's not been a priority to implement dead letter queuing.
   //
   // As long as the server is fast enough and the number of writes is low enough
-  // if we don't explicitly block writing all tasks will still complete, but it
-  // will cause timeouts and errors (and may take longer for the tasks to
-  // complete) so is better to explicitly pause writing for a few minutes.
+  // if we don't explicitly block writing queries can still complete, but it may
+  // cause timeouts and errors and it will take longer for the tasks to complete
+  // so we explicitly pause any attempt to write to the db for a few minutes.
   //
-  // Optimization takes around 1 minute in production and blocks writes.
-  cron.schedule('0 15 7 * * *', () => {
+  // Optimization takes around 1-2 minutes.
+  cron.schedule('0 15 6 * * *', () => {
     enableDatabaseWriteLock() // Disable writing to database during maintenance
 
-    // With SQLite only connections opened after optimization take advantage of
-    // any optimizations, so at 7:55 UTC every day all services that connect
-    // to the database – i.e. the Collector and the API – are automatically
-    // restarted (this is effectively instant).
     exec('npm run optimize', (error, stdout, stderr) => {
       if (error) console.error(error)
 
-      // Backup takes around 5 minutes in production and blocks writes.
+      // Backup takes around 15 minutes in production
       exec('npm run backup', (error, stdout, stderr) => {
         if (error) console.error(error)
 
@@ -126,7 +154,7 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
 
         // Generate compressed versions of the backups (suitable for download)
         // in the background. This uses gzip on the newly created backup files.
-        // It can take around 15 minutes but does not impact the live database.
+        // It can take around 30 minutes but does not impact the live database.
         // Downloads of backups during the maintaince window may fail when the
         // backup images are updated. 
         exec('npm run backup:compress', (error, stdout, stderr) => {
@@ -137,7 +165,9 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
   })
 
   // Generate high level stats like total star systems, trade orders, etc.
-  // Takes about 20s to run in test but 1m 30s in production due to load.
+  // Takes about 20s to run in test but 1m 30s in production due to load,
+  // this is a read only task (it writes to a JSON file) and is configured
+  // to run every hour on the hour.
   // @TODO Could maybe be real time if replaced with triggers on tables,
   // or a best-effort internal counter that tracks changes between updates.
   cron.schedule('0 0 * * * *', () => {
@@ -151,7 +181,7 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
 
   for await (const [message] of socket) {
     if (databaseWriteLocked === true) {
-      // TODO Buffer messages in a queue to disk and process them later
+      // TODO Buffer messages in a dead letter queue and process them later
       await new Promise(setImmediate)
       continue
     }
