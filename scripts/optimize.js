@@ -29,10 +29,12 @@ stationsDb.close()
 console.timeEnd('Optimize stationsDb')
 
 console.time('Optimize tradeDb')
-// Delete old trade data
-// tradeDb.exec(`
-//   DELETE FROM commodities WHERE updatedAt <= '${getISOTimestamp(`-${TRADE_DATA_MAX_AGE_DAYS}`)}'
-// `)
+// Delete commodity data older than TRADE_DATA_MAX_AGE_DAYS from the trade db.
+// Due to limited resources on the cheap Virtual Private Server hosting data
+// more than a year out of data doesn't seem worth the impact on performance.
+tradeDb.exec(`
+  DELETE FROM commodities WHERE updatedAt <= '${getISOTimestamp(`-${TRADE_DATA_MAX_AGE_DAYS}`)}'
+`)
 // The trade database should be vacuumed periodically to allow it to shrink in size as old data is deleted
 if (FULL_VACUUM === true) tradeDb.exec('VACUUM')
 tradeDb.pragma('wal_checkpoint(TRUNCATE)')
