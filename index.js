@@ -8,7 +8,8 @@ const {
   ARDENT_BACKUP_LOG,
   ARDENT_DATABASE_STATS,
   ARDENT_COLLECTOR_LOCAL_PORT,
-  ARDENT_COLLECTOR_DEFAULT_CACHE_CONTROL
+  ARDENT_COLLECTOR_DEFAULT_CACHE_CONTROL,
+  ARDENT_TRADE_DB
 } = require('./lib/consts')
 
 // In development this can be used to capture real-world payload examples
@@ -40,6 +41,54 @@ const journalEvent = require('./lib/event-handlers/journal-event')
 let databaseWriteLocked = false
 function enableDatabaseWriteLock () { databaseWriteLocked = true }
 function disableDatabaseWriteLock () { databaseWriteLocked = false }
+
+// Take a best effort approach try and keep trade database files cached in RAM  
+// if running on a Linux system that has vmtouch (like the production server).
+//
+// This is done to improve READ performance in the API, but it is handled by
+// the Collector so it can be controlled to allow memory to be freed up during 
+// operations like maintenance windows.
+//
+// The hard disk is an NVMe drive and is reasonably performant and consistent 
+// so this works reliably, but reading from RAM is still MUCH faster.
+//
+// Other databases like the Station database and even the much larger Systems 
+// database work fine without being in memory, the trade database is a special
+// l case, due to the nature of the data and the many ways it can be queried.
+//
+// Note: This does not vmtouch in daemon mode due to implications of that, but
+// instead uses vmtouch interactively which results in the benifits of RAM disk 
+// performance most of the time, without the complexity of dealing with syncing
+// data to backed up source, because the OS will handle that automatically.
+//
+// Using a RAM disk in a RAID-1 array with a physical partition configured with 
+// write behind is arguably a better solution - but is more work and, given the
+// RAM limitations of the server, would result in a hard failure if the
+// database was to grow large to fit in memory.
+let databaseCacheTriggerInterval = null
+let databaseCacheTriggersetTimeout = null
+function enableDatabaseCacheTrigger () { 
+  // Run once immediately - which can take up to 90 seconds - then every minute.
+  //
+  // Subsequent runs typically take < 5 seconds. It doesn't seem to cause a 
+  // problem in practice to have runs overlap but this tries to avoid it anyway.
+  databaseCacheTrigger()
+  databaseCacheTriggersetTimeout = setTimeout(() => {
+    databaseCacheTriggerInterval = setInterval(databaseCacheTrigger, 1000 * 60 * 1) // Schedule trigger to run every minute
+  }, 1000 * 60 * 2) // Wait 2 minutes after first run to start running every minute
+}
+function disableDatabaseCacheTrigger () {
+  clearTimeout(databaseCacheTriggersetTimeout)
+  clearInterval(databaseCacheTriggerInterval)
+}
+function databaseCacheTrigger() {
+  const cmd = '/usr/bin/vmtouch'
+  if (fs.existsSync(cmd)) {
+    exec(`${cmd} -t ${ARDENT_TRADE_DB}*`, (err, stdout, stderr) => {
+      if (err) console.error('databaseCacheTrigger:', err, stdout, stderr)
+    })
+  }
+}
 
 // Ensure payload example dir (and journal examples sub dir) exists
 if (SAVE_PAYLOAD_EXAMPLES === true &&
@@ -77,6 +126,7 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
   if (!fs.existsSync(ARDENT_BACKUP_LOG)) {
     console.log('No backup log found, starting backup now')
     enableDatabaseWriteLock()
+    
     exec('npm run backup', (error, stdout, stderr) => {
       if (error) console.error(error)
       disableDatabaseWriteLock()
@@ -134,6 +184,7 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
   // Optimization takes around 1-2 minutes.
   cron.schedule('0 15 6 * * *', () => {
     enableDatabaseWriteLock() // Disable writing to database during maintenance
+    disableDatabaseCacheTrigger() // Disable cache trigger during maintenance
 
     exec('npm run optimize', (error, stdout, stderr) => {
       if (error) console.error(error)
@@ -143,6 +194,7 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
         if (error) console.error(error)
 
         disableDatabaseWriteLock() // Mark database as open for writing again
+        enableDatabaseCacheTrigger() // Re-enable database cache trigger after backup
 
         // Generating stats and trade reports takes about 10 minutes. It does not
         // block anything but the queries are quite heavy as they involve
@@ -175,6 +227,8 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
       if (error) console.error(error)
     })
   })
+
+  enableDatabaseCacheTrigger() // Enable cache trigger
 
   console.log(printStats())
   console.log('Ardent Collector ready!')
