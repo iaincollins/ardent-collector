@@ -222,11 +222,19 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
   // to run every hour on the hour.
   // @TODO Could maybe be real time if replaced with triggers on tables,
   // or a best-effort internal counter that tracks changes between updates.
-  cron.schedule('0 0 * * * *', () => {
-    exec('npm run stats:database', (error, stdout, stderr) => {
-      if (error) console.error(error)
-    })
-  })
+  //
+  // FIXME: This is now taking > 10 minutes to run and driving up CPU usage
+  // to 30-50% on all cores when it runs, and causing the commodities database 
+  // to be swapped out of disk space entirely, causing the site to stop
+  // responding.
+  //
+  // This should be removed in favour of tracking stats using a real time
+  // counter merged with data from the last backup.
+  // cron.schedule('0 0 * * * *', () => {
+  //   exec('npm run stats:database', (error, stdout, stderr) => {
+  //     if (error) console.error(error)
+  //   })
+  // })
 
   enableDatabaseCacheTrigger() // Enable cache trigger
 
