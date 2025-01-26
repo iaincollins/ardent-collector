@@ -216,25 +216,16 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
     })
   })
 
-  // Generate high level stats like total star systems, trade orders, etc.
-  // Takes about 20s to run in test but 1m 30s in production due to load,
-  // this is a read only task (it writes to a JSON file) and is configured
-  // to run every hour on the hour.
-  // @TODO Could maybe be real time if replaced with triggers on tables,
-  // or a best-effort internal counter that tracks changes between updates.
+  // Generate daily stats like total star systems, number of trade orders, etc.
   //
-  // FIXME: This is now taking > 10 minutes to run and driving up CPU usage
-  // to 30-50% on all cores when it runs, and causing the commodities database 
-  // to be swapped out of disk space entirely, causing the site to stop
-  // responding.
-  //
-  // This should be removed in favour of tracking stats using a real time
-  // counter merged with data from the last backup.
-  // cron.schedule('0 0 * * * *', () => {
-  //   exec('npm run stats:database', (error, stdout, stderr) => {
-  //     if (error) console.error(error)
-  //   })
-  // })
+  // FIXME: This has been refactored but is still quite slow and could be better
+  // if the collector just logged stats as messags came in and periodically
+  // logged them to disk, in a JSON file or database.
+  cron.schedule('0 0 0 * * *', () => {
+    exec('npm run stats:database', (error, stdout, stderr) => {
+      if (error) console.error(error)
+    })
+  })
 
   enableDatabaseCacheTrigger() // Enable cache trigger
 
