@@ -31,9 +31,10 @@ other versions of Node.js.
 
 After doing `npm install` you can run the service with `npm start`.
 
-You may need to run `npm run stats` to generate at least once to avoid errors,
-but these will automatically if left running for long enough (they are scheduled
-tasks that run periodically, at least once a day).
+You may need to run `npm run stats` least once to generate cached data and 
+avoid errors being displayed at start up, but this is a scheduled task and
+will happen automatically eventually if you leave the service running for 
+long enough.
 
 ## Credits
 
