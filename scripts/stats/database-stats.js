@@ -3,6 +3,7 @@ const { ARDENT_CACHE_DIR, ARDENT_DATABASE_STATS } = require('../../lib/consts')
 const { getISOTimestamp } = require('../../lib/utils/dates')
 const { systemsDb, locationsDb, stationsDb, tradeDb } = require('../../lib/db')
 
+// TODO This needs updating (any changes should be synced with WWW repo)
 ;(async () => {
   console.log('Updating database stats…')
   console.time('Update database stats')
@@ -20,8 +21,8 @@ const { systemsDb, locationsDb, stationsDb, tradeDb } = require('../../lib/db')
   })
   const stationStats = stationsDb.prepare(`
   SELECT
-    (SELECT COUNT(*) FROM stations WHERE stationType != 'Fleet Carrier') as stations,
-    (SELECT COUNT(*) FROM stations WHERE stationType = 'Fleet Carrier') as fleetCarriers,
+    (SELECT COUNT(*) FROM stations WHERE stationType != 'FleetCarrier') as stations,
+    (SELECT COUNT(*) FROM stations WHERE stationType = 'FleetCarrier') as fleetCarriers,
     (SELECT COUNT(*) FROM stations WHERE updatedAt > @last24HoursTimestamp) as updatedInLast24Hours
   FROM stations
   `).get({

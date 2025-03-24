@@ -20,6 +20,10 @@ locationsDb.close()
 console.timeEnd('Optimize locationsDb')
 
 console.time('Optimize stationsDb')
+// TODO automatically purge old ConstructionDepot entries (after 7 days?)
+// stationsDb.exec(`
+//   DELETE FROM stations WHERE (stations.stationType = 'SpaceConstructionDepot' OR stations.stationType = 'PlanetaryConstructionDepot') AND updatedAt <= '${getISOTimestamp(`-${CONSTRUCTION_DEPOT_MAX_AGE_DAYS}`)}'
+// `)
 if (FULL_VACUUM === true) stationsDb.exec('VACUUM')
 stationsDb.pragma('wal_checkpoint(TRUNCATE)')
 stationsDb.pragma('optimize')
