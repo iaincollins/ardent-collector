@@ -3,7 +3,8 @@ const { ARDENT_CACHE_DIR, ARDENT_DATABASE_STATS } = require('../../lib/consts')
 const { getISOTimestamp } = require('../../lib/utils/dates')
 const { systemsDb, locationsDb, stationsDb, tradeDb } = require('../../lib/db')
 
-// TODO This needs updating (any changes should be synced with WWW repo)
+// TODO This needs a complete rewrite, it's both slow and not very precise 
+// Any changes should be synced with the front end
 ;(async () => {
   console.log('Updating database stats…')
   console.time('Update database stats')
