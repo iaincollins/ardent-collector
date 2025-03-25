@@ -13,15 +13,11 @@ const {
 const {
   ARDENT_DATA_DIR,
   ARDENT_BACKUP_DIR,
-  ARDENT_BACKUP_LOG,
-  WEEKLY_MAINTENANCE_DAY_OF_WEEK
+  ARDENT_BACKUP_LOG
 } = require('../lib/consts')
 
 const TEN_KB_IN_BYTES = 10000
 const TEN_MB_IN_BYTES = 10000000
-const MIN_ROWS_FOR_BACKUP_VALIDATION = 100
-
-const WEEKLY_MAINTIANCE_DAY = 3  // Only do this on Wednesdays (FDev Maintenance days)
 
 const { locationsDb, tradeDb, stationsDb, systemsDb } = require('../lib/db')
 
@@ -66,17 +62,8 @@ const { locationsDb, tradeDb, stationsDb, systemsDb } = require('../lib/db')
   backupDatabase(stationsDb, pathToStationsDbBackup)
   verifyResults.push(verifyBackup(pathToStationsDbBackup, ['stations'], TEN_MB_IN_BYTES))
 
-  if ((new Date()).getDay() === WEEKLY_MAINTENANCE_DAY_OF_WEEK) {
-    // Only backup systems database weekly 
-    // It's 25 GB so takes a while, but in relative terms it it doesn't change
-    // that much and just a list of all the names and locations of known systems,
-    // it doesn't contain actual information about bodies on those systems (etc)
-    writeBackupLog(`Backing up ${path.basename(pathToSystemsDbBackup)}`)
-    backupDatabase(systemsDb, pathToSystemsDbBackup)
-  } else {
-    writeBackupLog(`Skipping backup of ${path.basename(pathToSystemsDbBackup)} - it is only backed up once a week`)
-  }
-  // We still verify the existing backup so that it appears in the manifest
+  writeBackupLog(`Backing up ${path.basename(pathToSystemsDbBackup)}`)
+  backupDatabase(systemsDb, pathToSystemsDbBackup)
   verifyResults.push(verifyBackup(pathToSystemsDbBackup, ['systems'], TEN_MB_IN_BYTES))
 
   console.timeEnd('Backup complete')

@@ -9,7 +9,9 @@ const {
   ARDENT_DATABASE_STATS,
   ARDENT_COLLECTOR_LOCAL_PORT,
   ARDENT_COLLECTOR_DEFAULT_CACHE_CONTROL,
-  ARDENT_TRADE_DB
+  ARDENT_TRADE_DB,
+  MAINTENANCE_DAY_OF_WEEK,
+  MAINTENANCE_HOUR
 } = require('./lib/consts')
 
 // In development this can be used to capture real-world payload examples
@@ -31,6 +33,7 @@ console.log('Connecting to databases …')
 require('./lib/db')
 
 console.log('Loading libraries …')
+const startupMaintenance = require('./scripts/startup-maintenance')
 const commodityEvent = require('./lib/event-handlers/commodity-event')
 const discoveryScanEvent = require('./lib/event-handlers/discovery-scan-event')
 const navRouteEvent = require('./lib/event-handlers/navroute-event')
@@ -42,8 +45,8 @@ let databaseWriteLocked = false
 function enableDatabaseWriteLock () { databaseWriteLocked = true }
 function disableDatabaseWriteLock () { databaseWriteLocked = false }
 
-// Take a best effort approach try and keep trade database files cached in RAM  
-// if running on a Linux system that has vmtouch (like the production server).
+// A best effort approach try and keep trade database files cached in RAM if 
+// running on a Linux system that has vmtouch (i.e. like the production server).
 //
 // This is done to improve READ performance in the API, but it is handled by
 // the Collector so it can be controlled to allow memory to be freed up during 
@@ -54,7 +57,7 @@ function disableDatabaseWriteLock () { databaseWriteLocked = false }
 //
 // Other databases like the Station database and even the much larger Systems 
 // database work fine without being in memory, the trade database is a special
-// l case, due to the nature of the data and the many ways it can be queried.
+// case, due to the nature of the data and the many ways it can be queried.
 //
 // Note: This does not vmtouch in daemon mode due to implications of that, but
 // instead uses vmtouch interactively which results in the benifits of RAM disk 
@@ -68,13 +71,11 @@ function disableDatabaseWriteLock () { databaseWriteLocked = false }
 let databaseCacheTriggerInterval = null
 let databaseCacheTriggersetTimeout = null
 function enableDatabaseCacheTrigger () { 
-  // Run once immediately - which can take up to 90 seconds - then every minute.
-  //
-  // Subsequent runs typically take < 5 seconds. It doesn't seem to cause a 
-  // problem in practice to have runs overlap but this tries to avoid it anyway.
+  // Run once immediately - which can take up to 90 seconds to complete.
+  // Subsequent runs typically take < 5 seconds.
   databaseCacheTrigger()
   databaseCacheTriggersetTimeout = setTimeout(() => {
-    databaseCacheTriggerInterval = setInterval(databaseCacheTrigger, 1000 * 60 * 1) // Schedule trigger to run every minute
+    databaseCacheTriggerInterval = setInterval(databaseCacheTrigger, 1000 * 60 * 2) // Schedule trigger to run every 2 minutes
   }, 1000 * 60 * 2) // Wait 2 minutes after first run to start running every minute
 }
 function disableDatabaseCacheTrigger () {
@@ -122,9 +123,11 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
   socket.subscribe('')
   console.log('Connected to EDDN')
 
+  await startupMaintenance()
+
   // If a backup log does not exist, create a new backup immediately
   if (!fs.existsSync(ARDENT_BACKUP_LOG)) {
-    console.log('No backup log found, starting backup now')
+    console.log('No backup log found, creating backup now')
     enableDatabaseWriteLock()
     
     exec('npm run backup', (error, stdout, stderr) => {
@@ -132,57 +135,46 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
       disableDatabaseWriteLock()
     })
   } else {
-    console.log('Found existing backup log')
+    console.log('Confirmed existing backup log found')
   }
 
-  // The maintenance window is offically from 06:00 to 08:00 BST every day.
+  // The maintenance window is aligned with the window for the game, which is
+  // usually 7AM UTC on a Thursday.
   //
   // During the maintenance window the API and website continue running and
   // performance of them should not be impacted.
   //
-  // THE SCHEDULE:
+  // This maintenance window typically lasts about 15 minutes or so. The actual 
+  // game maintenance window starts at 7 AM is typically complete by 9AM, but 
+  // sometimes longer for major updates. This means by the time the game is back
+  // online the maintenance for this service should be long done.
   //
-  // 1. Start of maintenance window at 06:00 BST.
-  // 2. Database optimization and backup tasks are started at 06:15 BST.
-  // 3. Optimization takes around 1-2 minutes and the backup job takes
-  //    around 10-15 minutes - we pause ingesting from EDDN until both
-  //    those tasks are complete (around 15 minutes in total).
-  // 4. The Ardent Collector service resumes processing updates and some
-  //    daily trade reports are generated (e.g. lists of best buy/sell 
-  //    prices for different commodities in different regions).
-  // 5. Archiving/compressing of backups then starts in the background.
-  //    The entire archiving process takes around 30 minutes.
-  //    The downloadable daily backups are updated as so as the new data
-  //    is ready, attempting to download backups during the maintenance
-  //    window is not recommended.
-  // 6. At 07:15 BST the Ardent API service is restarted (see notes below).
-  // 7. At 07:45 BST the Ardent Collector - this service - is restarted.
-  // 8. End of maintenance window at 08:00 BST.
-  //
-  // NOTES:
+  // The API and Collector are restarted at 9 AM daily - see below for why.
   //
   // WHY PROCESS ARE RESTARTED:
   //
-  // With SQLite only connections opened after optimization take advantage
+  // With SQLite, only connections opened after optimization take advantage
   // of optimization runs so services that connect to the database - the 
   // Collector and the API - are automatically restarted by the `pm2`
   // process manager. The website does not talk to the database directly
   // and does not need to be restarted.
   //
-  // WHY WRITING TO THE DATABASE IS PAUSED:
+  // While maintiance starts at 7 AM, we wait until 9 AM to restart processes
+  // to give long running tasks, like backups / compression, time to complete.
   //
-  // Both optimization and backup tasks block writing to the database and ideally
-  // requests would be buffered during that time, but it's a short window
-  // of a few minutes in the morning every day and it happens during a quiet
-  // period so it's not been a priority to implement dead letter queuing.
+  // WHY WRITING TO THE DATABASE NEEDS TO BE PAUSED:
+  //
+  // Both optimization and backup tasks block writing to the database. Ideally
+  // requests could be buffered during that time, but if the game is offline 
+  // then we don't need to worry about lost messages.
   //
   // As long as the server is fast enough and the number of writes is low enough
-  // if we don't explicitly block writing queries can still complete, but it may
-  // cause timeouts and errors and it will take longer for the tasks to complete
-  // so we explicitly pause any attempt to write to the db for a few minutes.
+  // if we don't explicitly block writing queries we could do this at any time,
+  // but in practice it causes timeouts and errors and it will take longer for
+  // the tasks to complete, so it's better to wait for the maintenance window.
   //
   // Optimization takes around 1-2 minutes.
-  cron.schedule('0 15 6 * * *', () => {
+  cron.schedule(`0 0 ${MAINTENANCE_HOUR} * * ${MAINTENANCE_DAY_OF_WEEK}`, () => {
     enableDatabaseWriteLock() // Disable writing to database during maintenance
     disableDatabaseCacheTrigger() // Disable cache trigger during maintenance
 

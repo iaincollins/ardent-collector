@@ -2,8 +2,7 @@ const { systemsDb, locationsDb, stationsDb, tradeDb } = require('../lib/db')
 const { getISOTimestamp } = require('../lib/utils/dates')
 const { 
   TRADE_DATA_MAX_AGE_DAYS,
-  RESCUE_SHIP_MAX_AGE_DAYS,
-  WEEKLY_MAINTENANCE_DAY_OF_WEEK
+  RESCUE_SHIP_MAX_AGE_DAYS
 } = require('../lib/consts')
 
 // Using 'VACUUM' can be very slow and use up to 2x the disk space when running.
@@ -27,7 +26,7 @@ console.time('Optimize stationsDb')
 // Purge data for Rescue Ships that has not been updated in the last 7 days as
 // they have likely departed and no-longer in-game.
 stationsDb.exec(`
-  DELETE FROM stations WHERE stations.stationType = 'Megaship' AND stations.stationName LIKE 'Rescue Ship - %' AND updatedAt <= '${getISOTimestamp(`-${RESCUE_SHIP_MAX_AGE_DAYS}`)}'
+  DELETE FROM stations WHERE stations.stationType = 'MegaShip' AND stations.stationName LIKE 'Rescue Ship - %' AND updatedAt <= '${getISOTimestamp(`-${RESCUE_SHIP_MAX_AGE_DAYS}`)}'
 `)
 // Purge GameplayPOI stations. These are the type given to non-dockable 
 // installations - once constucted they are no longer valid markets/stations.
@@ -59,17 +58,10 @@ tradeDb.close()
 console.timeEnd('Optimize tradeDb')
 
 // ********* OPTIMIZE SYSTEMS DB *********
-// This DB typically only gets added to, not modified. Given the number of
-// entries in the database (approaching 150 million) and it consequently taking
-// quite a while (> 10 minutes) it makes sense to only do this once a week.
-if ((new Date()).getDay() === WEEKLY_MAINTENANCE_DAY_OF_WEEK) {
-  console.time('Optimize systemsDb')
-  optimize(systemsDb)
-  systemsDb.close()
-  console.timeEnd('Optimize systemsDb')
-} else {
-  console.log('Skipped optimization of systemsDb - this is only done once a week')
-}
+console.time('Optimize systemsDb')
+optimize(systemsDb)
+systemsDb.close()
+console.timeEnd('Optimize systemsDb')
 
 process.exit()
 
