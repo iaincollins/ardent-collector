@@ -189,7 +189,8 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
     exec('npm run optimize', (error, stdout, stderr) => {
       if (error) console.error(error)
 
-      // Backup takes around 15 minutes in production
+      // Daily backups take around 5 minutes each day, except on Thursday when
+      // the weekly backup of the system database ticks then it takes 15 minutes.
       exec('npm run backup', (error, stdout, stderr) => {
         if (error) console.error(error)
 

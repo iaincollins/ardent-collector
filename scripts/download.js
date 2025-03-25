@@ -51,7 +51,8 @@ function syncToDataDir (copyFrom, copyTo) {
     if (checksum === file.sha256) {
       console.log(`Checksum verified: ${file.sha256}`)
     } else {
-      throw new Error(`Checksum did not match expected value\nExpected: ${file.sha256}\nActual: ${checksum}`)
+      console.error(`ERROR: Checksum did not match expected value\nExpected: ${file.sha256}\nActual: ${checksum}`)
+      continue
     } 
 
     console.log(`Uncompressing ${path.basename(file.url)} …`)

@@ -2,7 +2,8 @@ const { systemsDb, locationsDb, stationsDb, tradeDb } = require('../lib/db')
 const { getISOTimestamp } = require('../lib/utils/dates')
 const { 
   TRADE_DATA_MAX_AGE_DAYS,
-  RESCUE_SHIP_MAX_AGE_DAYS
+  RESCUE_SHIP_MAX_AGE_DAYS,
+  WEEKLY_MAINTENANCE_DAY_OF_WEEK
 } = require('../lib/consts')
 
 // Using 'VACUUM' can be very slow and use up to 2x the disk space when running.
@@ -60,12 +61,15 @@ console.timeEnd('Optimize tradeDb')
 // ********* OPTIMIZE SYSTEMS DB *********
 // This DB typically only gets added to, not modified. Given the number of
 // entries in the database (approaching 150 million) and it consequently taking
-// quite a while (> 10 minutes) it might make sense to move this to a weekly
-// operation.
-console.time('Optimize systemsDb')
-optimize(systemsDb)
-systemsDb.close()
-console.timeEnd('Optimize systemsDb')
+// quite a while (> 10 minutes) it makes sense to only do this once a week.
+if ((new Date()).getDay() === WEEKLY_MAINTENANCE_DAY_OF_WEEK) {
+  console.time('Optimize systemsDb')
+  optimize(systemsDb)
+  systemsDb.close()
+  console.timeEnd('Optimize systemsDb')
+} else {
+  console.log('Skipped optimization of systemsDb - this is only done once a week')
+}
 
 process.exit()
 

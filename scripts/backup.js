@@ -4,19 +4,26 @@ const os = require('os')
 const checkDiskSpace = require('check-disk-space').default
 const fastFolderSizeSync = require('fast-folder-size/sync')
 const byteSize = require('byte-size')
-const SqlLiteDatabase = require('better-sqlite3')
+const {
+  writeBackupLog,
+  backupDatabase,
+  verifyBackup
+} = require('../lib/backup')
 
 const {
   ARDENT_DATA_DIR,
   ARDENT_BACKUP_DIR,
-  ARDENT_BACKUP_LOG
+  ARDENT_BACKUP_LOG,
+  WEEKLY_MAINTENANCE_DAY_OF_WEEK
 } = require('../lib/consts')
-
-const { locationsDb, tradeDb, stationsDb, systemsDb } = require('../lib/db')
 
 const TEN_KB_IN_BYTES = 10000
 const TEN_MB_IN_BYTES = 10000000
 const MIN_ROWS_FOR_BACKUP_VALIDATION = 100
+
+const WEEKLY_MAINTIANCE_DAY = 3  // Only do this on Wednesdays (FDev Maintenance days)
+
+const { locationsDb, tradeDb, stationsDb, systemsDb } = require('../lib/db')
 
 ;(async () => {
   console.log(`Writing backup log to ${ARDENT_BACKUP_LOG}`)
@@ -59,8 +66,17 @@ const MIN_ROWS_FOR_BACKUP_VALIDATION = 100
   backupDatabase(stationsDb, pathToStationsDbBackup)
   verifyResults.push(verifyBackup(pathToStationsDbBackup, ['stations'], TEN_MB_IN_BYTES))
 
-  writeBackupLog(`Backing up ${path.basename(pathToSystemsDbBackup)}`)
-  backupDatabase(systemsDb, pathToSystemsDbBackup)
+  if ((new Date()).getDay() === WEEKLY_MAINTENANCE_DAY_OF_WEEK) {
+    // Only backup systems database weekly 
+    // It's 25 GB so takes a while, but in relative terms it it doesn't change
+    // that much and just a list of all the names and locations of known systems,
+    // it doesn't contain actual information about bodies on those systems (etc)
+    writeBackupLog(`Backing up ${path.basename(pathToSystemsDbBackup)}`)
+    backupDatabase(systemsDb, pathToSystemsDbBackup)
+  } else {
+    writeBackupLog(`Skipping backup of ${path.basename(pathToSystemsDbBackup)} - it is only backed up once a week`)
+  }
+  // We still verify the existing backup so that it appears in the manifest
   verifyResults.push(verifyBackup(pathToSystemsDbBackup, ['systems'], TEN_MB_IN_BYTES))
 
   console.timeEnd('Backup complete')
@@ -86,53 +102,3 @@ const MIN_ROWS_FOR_BACKUP_VALIDATION = 100
 
   process.exit()
 })()
-
-function writeBackupLog (text, reset = false) {
-  const line = `${new Date().toISOString()}: ${text}\n`
-  if (reset === true || !fs.existsSync(ARDENT_BACKUP_LOG)) {
-    fs.writeFileSync(ARDENT_BACKUP_LOG, line)
-  } else {
-    fs.appendFileSync(ARDENT_BACKUP_LOG, line)
-  }
-}
-
-function backupDatabase (dbToBackup, pathToBackupTargetLocation) {
-  console.log(`Backing up ${path.basename(pathToBackupTargetLocation)} …`)
-  console.time(`Backed up ${path.basename(pathToBackupTargetLocation)}`)
-  fs.rmSync(pathToBackupTargetLocation, { force: true })
-  fs.rmSync(`${pathToBackupTargetLocation}-journal}`, { force: true })
-  fs.rmSync(`${pathToBackupTargetLocation}-shm`, { force: true })
-  fs.rmSync(`${pathToBackupTargetLocation}-wal`, { force: true })
-  dbToBackup.exec(`VACUUM INTO '${pathToBackupTargetLocation}'`)
-  console.timeEnd(`Backed up ${path.basename(pathToBackupTargetLocation)}`)
-}
-
-function verifyBackup (pathToBackupTargetLocation, tables, minDbSizeInBytes) {
-  console.time(`Verified backup of ${path.basename(pathToBackupTargetLocation)}`)
-  const { size: dbSize } = fs.statSync(pathToBackupTargetLocation)
-  writeBackupLog(`Backup of ${path.basename(pathToBackupTargetLocation)} is ${byteSize(dbSize)} (${dbSize} bytes)`)
-  if (dbSize < minDbSizeInBytes) { throw Error(`${pathToBackupTargetLocation} file size smaller than expected`) }
-
-  // Open connection to DB and set Write Ahead Log mode on it
-  const db = new SqlLiteDatabase(pathToBackupTargetLocation)
-  db.pragma('journal_mode = WAL')
-
-  const result = {
-    name: path.basename(pathToBackupTargetLocation),
-    size: dbSize,
-    tables: {}
-  }
-
-  for (const table of tables) {
-    const rowCount = db.prepare(`SELECT COUNT(*) as count FROM ${table}`).get().count
-    result.tables[table] = rowCount
-    writeBackupLog(`Backup of ${pathToBackupTargetLocation} table '${table}' has ${rowCount.toLocaleString('en-GB')} entries`)
-    if (rowCount < MIN_ROWS_FOR_BACKUP_VALIDATION) { throw Error(`${pathToBackupTargetLocation} row count for '${table}' smaller than expected`) }
-  }
-
-  db.close()
-  console.timeEnd(`Verified backup of ${path.basename(pathToBackupTargetLocation)}`)
-
-  return result
-}
-
