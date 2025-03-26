@@ -33,7 +33,7 @@ const databasesToBackup = [
     const pathToTmpOutput = `${pathToDatabase}.tmp.gz`
     await pipeline(
       fs.createReadStream(pathToDatabase),
-      zlib.createGzip(),
+      zlib.createGzip({ level: 1 }), // Favour faster compression over smaller files, latter takes way too long for large files
       fs.createWriteStream(pathToTmpOutput)
     )
     fs.renameSync(pathToTmpOutput,pathToOutput)
