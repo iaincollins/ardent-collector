@@ -11,7 +11,8 @@ const {
   ARDENT_COLLECTOR_DEFAULT_CACHE_CONTROL,
   ARDENT_TRADE_DB,
   MAINTENANCE_DAY_OF_WEEK,
-  MAINTENANCE_HOUR
+  MAINTENANCE_WINDOW_START_HOUR,
+  MAINTENANCE_WINDOW_END_HOUR
 } = require('./lib/consts')
 
 // In development this can be used to capture real-world payload examples
@@ -172,9 +173,7 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
   // if we don't explicitly block writing queries we could do this at any time,
   // but in practice it causes timeouts and errors and it will take longer for
   // the tasks to complete, so it's better to wait for the maintenance window.
-  //
-  // Optimization takes around 1-2 minutes.
-  cron.schedule(`0 0 ${MAINTENANCE_HOUR} * * ${MAINTENANCE_DAY_OF_WEEK}`, () => {
+  cron.schedule(`0 0 ${MAINTENANCE_WINDOW_START_HOUR} * * ${MAINTENANCE_DAY_OF_WEEK}`, () => {
     enableDatabaseWriteLock() // Disable writing to database during maintenance
     disableDatabaseCacheTrigger() // Disable cache trigger during maintenance
 
@@ -189,19 +188,8 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
         disableDatabaseWriteLock() // Mark database as open for writing again
         enableDatabaseCacheTrigger() // Re-enable database cache trigger after backup
 
-        // Generating stats and trade reports takes about 10 minutes. It does not
-        // block anything but the queries are quite heavy as they involve
-        // scanning and performing analysis on the entire trading database so we
-        // only do it once a day.
-        exec('npm run stats:commodity', (error, stdout, stderr) => {
-          if (error) console.error(error)
-        })
-
-        // Generate compressed versions of the backups (suitable for download)
-        // in the background. This uses gzip on the newly created backup files.
-        // It can take around 30 minutes but does not impact the live database.
-        // Downloads of backups during the maintaince window may fail when the
-        // backup images are updated. 
+        // Commpress generated backups to make them avalible for download in the 
+        // background. This has fairly low CPU impact but can take a while.
         exec('npm run backup:compress', (error, stdout, stderr) => {
           if (error) console.error(error)
         })
@@ -209,9 +197,21 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
     })
   })
 
+  cron.schedule(`0 15 ${MAINTENANCE_WINDOW_END_HOUR} * * ${MAINTENANCE_DAY_OF_WEEK}`, () => {
+    // Low priority task run after the maintenance window is complete...
+
+    // Generating stats does not block anything but can be slow and the queries
+    // are quite heavy as they involve scanning and performing analysis on the
+    // entire trading database so it's best done infrequently and ideally soon 
+    // after an optimiztion pass.
+    exec('npm run stats:commodity', (error, stdout, stderr) => {
+      if (error) console.error(error)
+    })
+  })
+
   // Generate daily stats like total star systems, number of trade orders, etc.
   //
-  // FIXME: This has been refactored but is still quite slow and could be better
+  // FIXME: This has been refactored but is still a bit slow and could be better
   // if the collector just logged stats as messags came in and periodically
   // logged them to disk, in a JSON file or database.
   cron.schedule('0 0 0 * * *', () => {
