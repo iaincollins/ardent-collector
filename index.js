@@ -40,6 +40,7 @@ const discoveryScanEvent = require('./lib/event-handlers/discovery-scan-event')
 const navRouteEvent = require('./lib/event-handlers/navroute-event')
 const approachSettlementEvent = require('./lib/event-handlers/approach-settlement-event')
 const journalEvent = require('./lib/event-handlers/journal-event')
+const { closeAllDatabaseConnections } = require('./lib/db')
 
 // When this is set don't write events to the database
 let databaseWriteLocked = false
@@ -273,7 +274,17 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
   }
 })()
 
-process.on('exit', () => console.log('Shutting down'))
+process.on('SIGTERM', () => {
+  console.log('Ardent Collector received SIGTERM signal')
+  closeAllDatabaseConnections()
+  process.exit(0)
+})
+
+process.on('SIGINT', () => {
+  console.log('Ardent Collector received SIGINT signal')
+  closeAllDatabaseConnections()
+  process.exit(0)
+})
 
 process.on('uncaughtException', (e) => console.log('Uncaught exception:', e))
 

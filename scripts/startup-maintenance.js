@@ -17,22 +17,7 @@ module.exports = async () => {
 
   console.log("Performing maintenance tasks...")
 
-  // v2.3.0
-  // One-time migration of normalize data in the stations and commodities databases
-  stationsDb.exec(`UPDATE stations SET stationType = 'MegaShip' WHERE stationType = 'Megaship'`)
-  stationsDb.exec(`UPDATE stations SET stationName = 'Stronghold Carrier', stationType = 'StrongholdCarrier' WHERE stationName = 'Stronghold Carrier'`)
-  stationsDb.exec(`UPDATE stations SET stationName = 'Stronghold Carrier', stationType = 'StrongholdCarrier' WHERE stationName = 'Hochburg-Carrier'`)
-  stationsDb.exec(`UPDATE stations SET stationName = 'Stronghold Carrier', stationType = 'StrongholdCarrier' WHERE stationName = 'Portanaves bastión'`)
-  stationsDb.exec(`UPDATE stations SET stationName = 'Stronghold Carrier', stationType = 'StrongholdCarrier' WHERE stationName = 'Porte-vaisseaux de forteresse'`)
-  stationsDb.exec(`UPDATE stations SET stationName = 'Stronghold Carrier', stationType = 'StrongholdCarrier' WHERE stationName = 'Transportadora da potência'`)
-  stationsDb.exec(`UPDATE stations SET stationName = 'Stronghold Carrier', stationType = 'StrongholdCarrier' WHERE stationName = 'Носитель-база'`)
-  stationsDb.exec(`UPDATE stations SET stationName = 'Stronghold Carrier', stationType = 'StrongholdCarrier' WHERE stationName = 'Stronghold Carrier'`)
-  tradeDb.exec(`UPDATE commodities SET stationName = 'Stronghold Carrier' WHERE stationName = 'Stronghold'`)
-  tradeDb.exec(`UPDATE commodities SET stationName = 'Stronghold Carrier' WHERE stationName = 'Hochburg-Carrier'`)
-  tradeDb.exec(`UPDATE commodities SET stationName = 'Stronghold Carrier' WHERE stationName = 'Portanaves bastión'`)
-  tradeDb.exec(`UPDATE commodities SET stationName = 'Stronghold Carrier' WHERE stationName = 'Porte-vaisseaux de forteresse'`)
-  tradeDb.exec(`UPDATE commodities SET stationName = 'Stronghold Carrier' WHERE stationName = 'Transportadora da potência'`)
-  tradeDb.exec(`UPDATE commodities SET stationName = 'Stronghold Carrier' WHERE stationName = 'Носитель-база'`)
+  locationsDb.exec(`DELETE FROM locations WHERE locationName LIKE 'Planetary Construction Site: %'`)
 
   console.timeEnd('Startup maintenance')
 }
