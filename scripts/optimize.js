@@ -2,7 +2,8 @@ const { systemsDb, locationsDb, stationsDb, tradeDb } = require('../lib/db')
 const { getISOTimestamp } = require('../lib/utils/dates')
 const { 
   TRADE_DATA_MAX_AGE_DAYS,
-  RESCUE_SHIP_MAX_AGE_DAYS
+  RESCUE_SHIP_MAX_AGE_DAYS,
+  FLEET_CARRIER_MAX_AGE_DAYS
 } = require('../lib/consts')
 
 // Using 'VACUUM' can be very slow and use up to 2x the disk space when running.
@@ -23,17 +24,21 @@ console.timeEnd('Optimize locationsDb')
 // ********* OPTIMIZE STATIONS DB *********
 console.time('Optimize stationsDb')
 
-// Purge data for Rescue Ships that has not been updated in the last 7 days as
-// they have likely departed and no-longer in-game.
+// Purge data for Rescue Ships that have not been confirmed as active recently
 stationsDb.exec(`
   DELETE FROM stations WHERE stations.stationType = 'MegaShip' AND stations.stationName LIKE 'Rescue Ship - %' AND updatedAt <= '${getISOTimestamp(`-${RESCUE_SHIP_MAX_AGE_DAYS}`)}'
+`)
+// Purge data for Fleet Carriers that have not been confirmed as active recently
+stationsDb.exec(`
+  DELETE FROM stations WHERE stations.stationType = 'FleetCarrier' AND updatedAt <= '${getISOTimestamp(`-${FLEET_CARRIER_MAX_AGE_DAYS}`)}'
 `)
 // Purge GameplayPOI stations. These are the type given to non-dockable 
 // installations - once constucted they are no longer valid markets/stations.
 stationsDb.exec(`
-  DELETE FROM stations WHERE stations.stationType = 'GameplayPOI'
+  DELETE FROM stations 
+    WHERE stations.stationType = 'GameplayPOI'
+       OR stations.stationType = 'DockablePlanetStation'
 `)
-
 optimize(stationsDb)
 stationsDb.close()
 console.timeEnd('Optimize stationsDb')

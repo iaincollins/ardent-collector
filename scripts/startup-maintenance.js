@@ -1,4 +1,5 @@
 const { systemsDb, locationsDb, stationsDb, tradeDb } = require('../lib/db')
+const { getISOTimestamp } = require('../lib/utils/dates')
 
 // The purpose of this is to be a place for any logic that needs to run at 
 // startup, before the service goes back online. It is not a script in the 
@@ -17,8 +18,8 @@ module.exports = async () => {
 
   console.log("Performing maintenance tasks...")
 
-  locationsDb.exec(`DELETE FROM locations WHERE locationName LIKE 'Planetary Construction Site: %'`)
-  stationsDb.exec(`DELETE FROM stations WHERE stationType = 'DockablePlanetStation'`)
-
+  stationsDb.exec(`DELETE FROM stations WHERE stationName = 'System Colonisation Ship'`)
+  stationsDb.exec(`DELETE FROM stations WHERE stationType = 'FleetCarrier' AND updatedAt <= '${getISOTimestamp(`-90`)}'`)
+  
   console.timeEnd('Startup maintenance')
 }

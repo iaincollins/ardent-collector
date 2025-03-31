@@ -1,5 +1,6 @@
 const Package = require('./package.json')
 console.log(`Ardent Collector v${Package.version} starting`)
+console.log(new Date().toISOString())
 
 // Initalise default value for env vars before other imports
 console.log('Configuring environment …')
