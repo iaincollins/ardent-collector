@@ -18,6 +18,7 @@ module.exports = async () => {
   console.log("Performing maintenance tasks...")
 
   locationsDb.exec(`DELETE FROM locations WHERE locationName LIKE 'Planetary Construction Site: %'`)
+  stationsDb.exec(`DELETE FROM stations WHERE stationType = 'DockablePlanetStation'`)
 
   console.timeEnd('Startup maintenance')
 }
