@@ -78,7 +78,7 @@ function enableDatabaseCacheTrigger () {
   // Subsequent runs typically take < 5 seconds.
   databaseCacheTrigger()
   databaseCacheTriggersetTimeout = setTimeout(() => {
-    databaseCacheTriggerInterval = setInterval(databaseCacheTrigger, 1000 * 60 * 2) // Schedule trigger to run every 2 minutes
+    databaseCacheTriggerInterval = setInterval(databaseCacheTrigger, 1000 * 60 * 1) // Schedule trigger to run every minute
   }, 1000 * 60 * 2) // Wait 2 minutes after first run to start running every minute
 }
 function disableDatabaseCacheTrigger () {
