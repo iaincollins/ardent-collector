@@ -45,7 +45,7 @@ const databasesToBackup = [
     try {
       backupDownloadManifest[path.basename(pathToDatabase)] = {
         name: path.basename(pathToDatabase),
-        url: `https://downloads.ardent-industry.com/${path.basename(pathToOutput)}`,
+        url: `https://downloads.ardent-insight.com/${path.basename(pathToOutput)}`,
         size: newSize,
         created,
         sha256: await getFileHash(pathToOutput)
