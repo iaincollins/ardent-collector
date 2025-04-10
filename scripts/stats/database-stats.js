@@ -33,19 +33,19 @@ const { systemsDb, locationsDb, stationsDb, tradeDb } = require('../../lib/db')
     systems: systemsDb.prepare('SELECT COUNT(*) as count FROM systems').get().count,
     pointsOfInterest: locationsDb.prepare('SELECT COUNT(*) as count FROM locations').get().count,
     stations: {
-      stations: stationStats.stations,
-      carriers: stationStats.fleetCarriers,
-      updatedInLast24Hours: stationStats.updatedInLast24Hours
+      stations: stationStats?.stations ?? 0,
+      carriers: stationStats?.fleetCarriers ?? 0,
+      updatedInLast24Hours: stationStats?.updatedInLast24Hours ?? 0
     },
     trade: {
-      systems: commodityStats.tradeSystems,
-      stations: commodityStats.tradeStations,
-      carriers: commodityStats.tradeCarriers,
-      tradeOrders: commodityStats.tradeOrders,
-      updatedInLast24Hours: commodityStats.updatedInLast24Hours,
-      uniqueCommodities: commodityStats.uniqueCommodities
+      systems: commodityStats?.tradeSystems ?? 0,
+      stations: commodityStats?.tradeStations ?? 0,
+      carriers: commodityStats?.tradeCarriers ?? 0,
+      tradeOrders: commodityStats?.tradeOrders ?? 0,
+      updatedInLast24Hours: commodityStats?.updatedInLast24Hours ?? 0,
+      uniqueCommodities: commodityStats?.uniqueCommodities ?? 0
     },
-    updatedInLast24Hours: commodityStats.updatedInLast24Hours + stationStats.updatedInLast24Hours,
+    updatedInLast24Hours: commodityStats?.updatedInLast24Hours ?? 0 + stationStats?.updatedInLast24Hours ?? 0,
     timestamp: new Date().toISOString()
   }
   if (!fs.existsSync(ARDENT_CACHE_DIR)) { fs.mkdirSync(ARDENT_CACHE_DIR, { recursive: true }) }

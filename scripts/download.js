@@ -13,7 +13,7 @@ const getFileHash = require('../lib/utils/get-file-hash')
 
 const { ARDENT_DATA_DIR } = require('../lib/consts')
 const TMP_DOWNLOAD_DIR = path.join(ARDENT_DATA_DIR, 'tmp')
-const BACKUP_DOWNLOAD_MANIFEST = 'https://downloads.ardent-insight.com/backup-downloads.json'
+const BACKUP_DOWNLOAD_MANIFEST = 'https://downloads.ardent-insight.com/downloads.json'
 
 async function download (url, pathToDestination) {
   if (fs.existsSync(pathToDestination)) await rm(pathToDestination)

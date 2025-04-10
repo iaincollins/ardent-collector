@@ -7,9 +7,13 @@ const stream = require('stream')
 const { promisify } = require('util')
 const pipeline = promisify(stream.pipeline)
 
-const { ARDENT_BACKUP_DIR } = require('../lib/consts')
+const { 
+  ARDENT_DOWNLOADS_BASE_URL,
+  ARDENT_BACKUP_DIR,
+  ARDENT_DOWNLOADS_DIR
+} = require('../lib/consts')
 
-const pathToBackupDownloadManifest = path.join(ARDENT_BACKUP_DIR, 'backup-downloads.json')
+const pathToBackupDownloadManifest = path.join(ARDENT_DOWNLOADS_DIR, 'downloads.json')
 
 const databasesToBackup = [
   path.join(ARDENT_BACKUP_DIR, '/locations.db'),
@@ -29,8 +33,8 @@ const databasesToBackup = [
 
     // Note: Does not overwrite existing compressed version until the new
     // version has been created so that the switch over is atomic
-    const pathToOutput = `${pathToDatabase}.gz`
-    const pathToTmpOutput = `${pathToDatabase}.tmp.gz`
+    const pathToOutput = `${ARDENT_DOWNLOADS_DIR}/${path.basename(pathToDatabase)}.gz`
+    const pathToTmpOutput = `${ARDENT_DOWNLOADS_DIR}/${path.basename(pathToDatabase)}.tmp.gz`
     await pipeline(
       fs.createReadStream(pathToDatabase),
       zlib.createGzip({ level: 1 }), // Favour faster compression over smaller files, latter takes way too long for large files
@@ -45,7 +49,7 @@ const databasesToBackup = [
     try {
       backupDownloadManifest[path.basename(pathToDatabase)] = {
         name: path.basename(pathToDatabase),
-        url: `https://downloads.ardent-insight.com/${path.basename(pathToOutput)}`,
+        url: `${ARDENT_DOWNLOADS_BASE_URL}/${path.basename(pathToOutput)}`,
         size: newSize,
         created,
         sha256: await getFileHash(pathToOutput)
