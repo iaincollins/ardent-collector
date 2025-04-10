@@ -11,6 +11,8 @@ const {
   ARDENT_COLLECTOR_LOCAL_PORT,
   ARDENT_COLLECTOR_DEFAULT_CACHE_CONTROL,
   ARDENT_TRADE_DB,
+  ARDENT_STATIONS_DB,
+  ARDENT_LOCATIONS_DB,
   MAINTENANCE_DAY_OF_WEEK,
   MAINTENANCE_WINDOW_START_HOUR,
   MAINTENANCE_WINDOW_END_HOUR
@@ -48,29 +50,19 @@ let databaseWriteLocked = false
 function enableDatabaseWriteLock () { databaseWriteLocked = true }
 function disableDatabaseWriteLock () { databaseWriteLocked = false }
 
-// A best effort approach try and keep trade database files cached in RAM if 
+// A best effort approach try and keep seelct database files cached in RAM if 
 // running on a Linux system that has vmtouch (i.e. like the production server).
 //
-// This is done to improve READ performance in the API, but it is handled by
+// This is done to improve read performance in the API, but it is handled by
 // the Collector so it can be controlled to allow memory to be freed up during 
 // operations like maintenance windows.
 //
 // The hard disk is an NVMe drive and is reasonably performant and consistent 
-// so this works reliably, but reading from RAM is still MUCH faster.
+// so this works reliably, but reading when cached in RAM is still much faster.
 //
-// Other databases like the Station database and even the much larger Systems 
-// database work fine without being in memory, the trade database is a special
-// case, due to the nature of the data and the many ways it can be queried.
-//
-// Note: This does not vmtouch in daemon mode due to implications of that, but
-// instead uses vmtouch interactively which results in the benifits of RAM disk 
-// performance most of the time, without the complexity of dealing with syncing
-// data to backed up source, because the OS will handle that automatically.
-//
-// Using a RAM disk in a RAID-1 array with a physical partition configured with 
-// write behind is arguably a better solution - but is more work and, given the
-// RAM limitations of the server, would result in a hard failure if the
-// database was to grow large to fit in memory.
+// Unlike a ramdisk or a strictly in memory database performance is not assured
+// but the trade off is flexibility to grown the database in size and ease of 
+// system management.
 let databaseCacheTriggerInterval = null
 let databaseCacheTriggersetTimeout = null
 function enableDatabaseCacheTrigger () { 
@@ -89,7 +81,13 @@ function databaseCacheTrigger() {
   const cmd = '/usr/bin/vmtouch'
   if (fs.existsSync(cmd)) {
     exec(`${cmd} -t ${ARDENT_TRADE_DB}*`, (err, stdout, stderr) => {
-      if (err) console.error('databaseCacheTrigger:', err, stdout, stderr)
+      if (err) console.error('Error on cach trigger for Trade DB:', err, stdout, stderr)
+    })
+    exec(`${cmd} -t ${ARDENT_STATIONS_DB}*`, (err, stdout, stderr) => {
+      if (err) console.error('Error on cach trigger for Station DB:', err, stdout, stderr)
+    })
+    exec(`${cmd} -t ${ARDENT_LOCATIONS_DB}*`, (err, stdout, stderr) => {
+      if (err) console.error('Error on cach trigger for Locations DB:', err, stdout, stderr)
     })
   }
 }
