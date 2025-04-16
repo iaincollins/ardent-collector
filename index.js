@@ -44,6 +44,7 @@ const navRouteEvent = require('./lib/event-handlers/navroute-event')
 const approachSettlementEvent = require('./lib/event-handlers/approach-settlement-event')
 const journalEvent = require('./lib/event-handlers/journal-event')
 const { closeAllDatabaseConnections } = require('./lib/db')
+const { isNumberObject } = require('util/types')
 
 // When this is set don't write events to the database
 let databaseWriteLocked = false
@@ -240,8 +241,19 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
     zlib.inflate(message, (error, chunk) => {
       if (error) return console.error(error)
 
+
       const payload = JSON.parse(chunk.toString('utf8'))
       const schema = payload?.$schemaRef ?? 'SCHEMA_UNDEFINED'
+
+      // Ignore messages that are not from the live version of the game
+      // i.e. At least version 4.0.0.0 -or- the version starts with 'CAPI-Live-'
+      // which indicates the data has come from the live API provided by FDev.
+      // This will mean we ignore some mesasges from software that is not 
+      // behaving correctly but we can't trust data from old software anyway as
+      // it might be from someone running a legacy version of the game.
+      var gameMajorVersion = Number(payload?.header?.gameversion?.split('.')?.[0] ?? 0)
+      if (gameMajorVersion < 4 && !payload?.header?.gameversion?.startsWith('CAPI-Live-'))
+      return
 
       // If we don't have an example message and SAVE_PAYLOAD_EXAMPLES is true, save it
       if (SAVE_PAYLOAD_EXAMPLES) {
