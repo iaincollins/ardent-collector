@@ -19,7 +19,9 @@ module.exports = async () => {
   console.log("Performing maintenance tasks...")
 
   stationsDb.exec(`DELETE FROM stations WHERE stationName = 'System Colonisation Ship'`)
-  stationsDb.exec(`DELETE FROM stations WHERE stationType = 'FleetCarrier' AND updatedAt <= '${getISOTimestamp(`-90`)}'`)
-  
+  stationsDb.exec(`DELETE FROM stations WHERE stationName = '$EXT_PANEL_ColonisationShip'`)
+  tradeDb.exec(`DELETE FROM commodities WHERE stationName = 'System Colonisation Ship'`)
+  tradeDb.exec(`DELETE FROM commodities WHERE stationName = '$EXT_PANEL_ColonisationShip'`)
+
   console.timeEnd('Startup maintenance')
 }
