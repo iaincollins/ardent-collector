@@ -23,5 +23,16 @@ module.exports = async () => {
   tradeDb.exec(`DELETE FROM commodities WHERE stationName = 'System Colonisation Ship'`)
   tradeDb.exec(`DELETE FROM commodities WHERE stationName = '$EXT_PANEL_ColonisationShip'`)
 
+  // Very specific order for this clean up of fleet carrier entries
+  stationsDb.exec(`UPDATE stations SET primaryEconomy = 'Carrier' WHERE stationType = 'Fleet Carrier' OR primaryEconomy = 'Fleet Carrier'`)
+  stationsDb.exec(`UPDATE stations SET stationType = 'FleetCarrier' WHERE primaryEconomy = 'Carrier'`)
+  stationsDb.exec(`UPDATE stations SET primaryEconomy = NULL, secondaryEconomy = NULL, government = NULL, allegiance = NULL, controllingFaction = NULL, bodyId = NULL, bodyName = null WHERE stationType = 'FleetCarrier'`)
+
+  stationsDb.exec(`UPDATE stations SET primaryEconomy = 'Agriculture' WHERE primaryEconomy = 'Agri'`)
+  stationsDb.exec(`UPDATE stations SET secondaryEconomy = 'Agriculture' WHERE secondaryEconomy = 'Agri'`)
+
+  stationsDb.exec(`UPDATE stations SET primaryEconomy = 'HighTech' WHERE primaryEconomy = 'High Tech'`)
+  stationsDb.exec(`UPDATE stations SET secondaryEconomy = 'HighTech' WHERE secondaryEconomy = 'High Tech'`)
+
   console.timeEnd('Startup maintenance')
 }
