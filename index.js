@@ -44,7 +44,6 @@ const navRouteEvent = require('./lib/event-handlers/navroute-event')
 const approachSettlementEvent = require('./lib/event-handlers/approach-settlement-event')
 const journalEvent = require('./lib/event-handlers/journal-event')
 const { closeAllDatabaseConnections } = require('./lib/db')
-const { isNumberObject } = require('util/types')
 
 // When this is set don't write events to the database
 let databaseWriteLocked = false
@@ -66,13 +65,16 @@ function disableDatabaseWriteLock () { databaseWriteLocked = false }
 // system management.
 let databaseCacheTriggerInterval = null
 let databaseCacheTriggersetTimeout = null
+const cacheTriggerFrequencyInSeconds = 0 // Disabled for now, only runs at startup
 function enableDatabaseCacheTrigger () { 
-  // Run once immediately - which can take up to 90 seconds to complete.
+  // Run once immediately, can take up to 90 seconds to complete.
   // Subsequent runs typically take < 5 seconds.
   databaseCacheTrigger()
-  databaseCacheTriggersetTimeout = setTimeout(() => {
-    databaseCacheTriggerInterval = setInterval(databaseCacheTrigger, 1000 * 60 * 1) // Schedule trigger to run every minute
-  }, 1000 * 60 * 2) // Wait 2 minutes after first run to start running every minute
+  if (cacheTriggerFrequencyInSeconds > 0) {
+    databaseCacheTriggersetTimeout = setTimeout(() => {
+      databaseCacheTriggerInterval = setInterval(databaseCacheTrigger, 1000 * cacheTriggerFrequencyInSeconds)
+    }, 1000 * 60 * 2) // Wait 2 minutes after first run to start
+  }
 }
 function disableDatabaseCacheTrigger () {
   clearTimeout(databaseCacheTriggersetTimeout)
@@ -140,40 +142,43 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
     console.log('Confirmed existing backup log found')
   }
 
-  // The maintenance window is aligned with the window for the game, which is
+  // ABOUT THE MAINTENANCE WINDOW
+  //
+  // The maintenance window is aligned with the window for the game, which is 
   // usually 7AM UTC on a Thursday.
   //
-  // During the maintenance window the API and website continue running and
+  // During the maintenance window the API and website continue running and 
   // performance of them should not be impacted.
   //
-  // This maintenance window typically lasts about 15 minutes or so. The actual 
-  // game maintenance window starts at 7 AM is typically complete by 9AM, but 
-  // sometimes longer for major updates. This means by the time the game is back
-  // online the maintenance for this service should be long done.
+  // Ardent maintenance tasks - like optimising the databases and creating 
+  // backups - takes around 15-30 minutes. The actual game maintenance window 
+  // usually is from 7AM to 9AM UTC and commonly takes 2-3 hours, so we these 
+  // tasks should all be finished long before the game comes back online.
   //
   // The API and Collector are restarted at 9 AM daily - see below for why.
   //
-  // WHY PROCESS ARE RESTARTED:
+  // WHY PROCESS ARE RESTARTED
   //
-  // With SQLite, only connections opened after optimization take advantage
-  // of optimization runs so services that connect to the database - the 
-  // Collector and the API - are automatically restarted by the `pm2`
-  // process manager. The website does not talk to the database directly
-  // and does not need to be restarted.
+  // With SQLite, only connections opened after optimization take advantage of 
+  // optimization runs so services that connect to the database - the Collector 
+  // and the API - are automatically restarted by the `pm2` process manager. 
+  // The website does not connect to the database directly and so does not need 
+  // to be restarted.
   //
-  // While maintiance starts at 7 AM, we wait until 9 AM to restart processes
-  // to give long running tasks, like backups / compression, time to complete.
+  // While our maintenance window starts at 7 AM and blocking tasks are usually 
+  // complete within 15-30 minutes, we wait until 9 AM to restart processes.
   //
-  // WHY WRITING TO THE DATABASE NEEDS TO BE PAUSED:
+  // WHY WRITING TO THE DATABASE IS SUSPENDED DURING THE MAINTENANCE WINDOW
   //
-  // Both optimization and backup tasks block writing to the database. Ideally
+  // Both optimization and backup tasks impact writing to the database. Ideally 
   // requests could be buffered during that time, but if the game is offline 
   // then we don't need to worry about lost messages.
   //
-  // As long as the server is fast enough and the number of writes is low enough
-  // if we don't explicitly block writing queries we could do this at any time,
-  // but in practice it causes timeouts and errors and it will take longer for
-  // the tasks to complete, so it's better to wait for the maintenance window.
+  // As long as the server is fast enough and the number of writes is low if we 
+  // didn't explicitly block writing queries we could do this at any time, but 
+  // in practice it causes timeouts and errors and it will take longer for the 
+  // tasks to complete, so in practice a maintenance window works out well, 
+  // especially given the the game itself has one and so is offline anyway.
   cron.schedule(`0 0 ${MAINTENANCE_WINDOW_START_HOUR} * * ${MAINTENANCE_DAY_OF_WEEK}`, () => {
     enableDatabaseWriteLock() // Disable writing to database during maintenance
     disableDatabaseCacheTrigger() // Disable cache trigger during maintenance
@@ -181,8 +186,9 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
     exec('npm run optimize', (error, stdout, stderr) => {
       if (error) console.error(error)
 
-      // Daily backups take around 5 minutes each day, except on Thursday when
-      // the weekly backup of the system database ticks then it takes 15 minutes.
+      // The backup takes around 15 minutes to complete, with most of that 
+      // being down to the systems database (around 150 million entires). This 
+      // could be optimised but there isn't really a need to.
       exec('npm run backup', (error, stdout, stderr) => {
         if (error) console.error(error)
 
