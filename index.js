@@ -50,23 +50,23 @@ let databaseWriteLocked = false
 function enableDatabaseWriteLock () { databaseWriteLocked = true }
 function disableDatabaseWriteLock () { databaseWriteLocked = false }
 
-// A best effort approach try and keep seelct database files cached in RAM if 
+// A best effort approach try and keep seelct database files cached in RAM if
 // running on a Linux system that has vmtouch (i.e. like the production server).
 //
 // This is done to improve read performance in the API, but it is handled by
-// the Collector so it can be controlled to allow memory to be freed up during 
+// the Collector so it can be controlled to allow memory to be freed up during
 // operations like maintenance windows.
 //
-// The hard disk is an NVMe drive and is reasonably performant and consistent 
+// The hard disk is an NVMe drive and is reasonably performant and consistent
 // so this works reliably, but reading when cached in RAM is still much faster.
 //
 // Unlike a ramdisk or a strictly in memory database performance is not assured
-// but the trade off is flexibility to grown the database in size and ease of 
+// but the trade off is flexibility to grown the database in size and ease of
 // system management.
 let databaseCacheTriggerInterval = null
 let databaseCacheTriggersetTimeout = null
 const cacheTriggerFrequencyInSeconds = 0 // Disabled for now, only runs at startup
-function enableDatabaseCacheTrigger () { 
+function enableDatabaseCacheTrigger () {
   // Run once immediately, can take up to 90 seconds to complete.
   // Subsequent runs typically take < 5 seconds.
   databaseCacheTrigger()
@@ -80,7 +80,7 @@ function disableDatabaseCacheTrigger () {
   clearTimeout(databaseCacheTriggersetTimeout)
   clearInterval(databaseCacheTriggerInterval)
 }
-function databaseCacheTrigger() {
+function databaseCacheTrigger () {
   const cmd = '/usr/bin/vmtouch'
   if (fs.existsSync(cmd)) {
     exec(`${cmd} -t ${ARDENT_TRADE_DB}*`, (err, stdout, stderr) => {
@@ -133,7 +133,7 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
   if (!fs.existsSync(ARDENT_BACKUP_LOG)) {
     console.log('No backup log found, creating backup now')
     enableDatabaseWriteLock()
-    
+
     exec('npm run backup', (error, stdout, stderr) => {
       if (error) console.error(error)
       disableDatabaseWriteLock()
@@ -144,40 +144,40 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
 
   // ABOUT THE MAINTENANCE WINDOW
   //
-  // The maintenance window is aligned with the window for the game, which is 
+  // The maintenance window is aligned with the window for the game, which is
   // usually 7AM UTC on a Thursday.
   //
-  // During the maintenance window the API and website continue running and 
+  // During the maintenance window the API and website continue running and
   // performance of them should not be impacted.
   //
-  // Ardent maintenance tasks - like optimising the databases and creating 
-  // backups - takes around 15-30 minutes. The actual game maintenance window 
-  // usually is from 7AM to 9AM UTC and commonly takes 2-3 hours, so we these 
+  // Ardent maintenance tasks - like optimising the databases and creating
+  // backups - takes around 15-30 minutes. The actual game maintenance window
+  // usually is from 7AM to 9AM UTC and commonly takes 2-3 hours, so we these
   // tasks should all be finished long before the game comes back online.
   //
   // The API and Collector are restarted at 9 AM daily - see below for why.
   //
   // WHY PROCESS ARE RESTARTED
   //
-  // With SQLite, only connections opened after optimization take advantage of 
-  // optimization runs so services that connect to the database - the Collector 
-  // and the API - are automatically restarted by the `pm2` process manager. 
-  // The website does not connect to the database directly and so does not need 
+  // With SQLite, only connections opened after optimization take advantage of
+  // optimization runs so services that connect to the database - the Collector
+  // and the API - are automatically restarted by the `pm2` process manager.
+  // The website does not connect to the database directly and so does not need
   // to be restarted.
   //
-  // While our maintenance window starts at 7 AM and blocking tasks are usually 
+  // While our maintenance window starts at 7 AM and blocking tasks are usually
   // complete within 15-30 minutes, we wait until 9 AM to restart processes.
   //
   // WHY WRITING TO THE DATABASE IS SUSPENDED DURING THE MAINTENANCE WINDOW
   //
-  // Both optimization and backup tasks impact writing to the database. Ideally 
-  // requests could be buffered during that time, but if the game is offline 
+  // Both optimization and backup tasks impact writing to the database. Ideally
+  // requests could be buffered during that time, but if the game is offline
   // then we don't need to worry about lost messages.
   //
-  // As long as the server is fast enough and the number of writes is low if we 
-  // didn't explicitly block writing queries we could do this at any time, but 
-  // in practice it causes timeouts and errors and it will take longer for the 
-  // tasks to complete, so in practice a maintenance window works out well, 
+  // As long as the server is fast enough and the number of writes is low if we
+  // didn't explicitly block writing queries we could do this at any time, but
+  // in practice it causes timeouts and errors and it will take longer for the
+  // tasks to complete, so in practice a maintenance window works out well,
   // especially given the the game itself has one and so is offline anyway.
   cron.schedule(`0 0 ${MAINTENANCE_WINDOW_START_HOUR} * * ${MAINTENANCE_DAY_OF_WEEK}`, () => {
     enableDatabaseWriteLock() // Disable writing to database during maintenance
@@ -186,8 +186,8 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
     exec('npm run optimize', (error, stdout, stderr) => {
       if (error) console.error(error)
 
-      // The backup takes around 15 minutes to complete, with most of that 
-      // being down to the systems database (around 150 million entires). This 
+      // The backup takes around 15 minutes to complete, with most of that
+      // being down to the systems database (around 150 million entires). This
       // could be optimised but there isn't really a need to.
       exec('npm run backup', (error, stdout, stderr) => {
         if (error) console.error(error)
@@ -195,7 +195,7 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
         disableDatabaseWriteLock() // Mark database as open for writing again
         enableDatabaseCacheTrigger() // Re-enable database cache trigger after backup
 
-        // Commpress generated backups to make them avalible for download in the 
+        // Commpress generated backups to make them avalible for download in the
         // background. This has fairly low CPU impact but can take a while.
         exec('npm run backup:compress', (error, stdout, stderr) => {
           if (error) console.error(error)
@@ -209,11 +209,16 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
 
     // Generating stats does not block anything but can be slow and the queries
     // are quite heavy as they involve scanning and performing analysis on the
-    // entire trading database so it's best done infrequently and ideally soon 
+    // entire trading database so it's best done infrequently and ideally soon
     // after an optimiztion pass.
+    //
+    // FIXME Stats generation to be refactored to leverage new trade db schema
+    // before scheduled maintenance window next week (not urgent)
+    /*
     exec('npm run stats:commodity', (error, stdout, stderr) => {
       if (error) console.error(error)
     })
+    */
   })
 
   // Generate daily stats like total star systems, number of trade orders, etc.
@@ -222,7 +227,7 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
   // if the collector just logged stats as messags came in and periodically
   // logged them to disk, in a JSON file or database.
   //
-  // TODO Moving this to 6 AM temporarily. Intend to replace this with 
+  // TODO Moving this to 6 AM temporarily. Intend to replace this with
   // an implementation that leverages sqlite3-rsync to do a local copy and
   // perform more frequent stats runs against those databases to avoid
   // impacting production performance.
@@ -247,19 +252,17 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
     zlib.inflate(message, (error, chunk) => {
       if (error) return console.error(error)
 
-
       const payload = JSON.parse(chunk.toString('utf8'))
       const schema = payload?.$schemaRef ?? 'SCHEMA_UNDEFINED'
 
       // Ignore messages that are not from the live version of the game
       // i.e. At least version 4.0.0.0 -or- the version starts with 'CAPI-Live-'
       // which indicates the data has come from the live API provided by FDev.
-      // This will mean we ignore some mesasges from software that is not 
+      // This will mean we ignore some mesasges from software that is not
       // behaving correctly but we can't trust data from old software anyway as
       // it might be from someone running a legacy version of the game.
-      var gameMajorVersion = Number(payload?.header?.gameversion?.split('.')?.[0] ?? 0)
-      if (gameMajorVersion < 4 && !payload?.header?.gameversion?.startsWith('CAPI-Live-'))
-      return
+      const gameMajorVersion = Number(payload?.header?.gameversion?.split('.')?.[0] ?? 0)
+      if (gameMajorVersion < 4 && !payload?.header?.gameversion?.startsWith('CAPI-Live-')) { return }
 
       // If we don't have an example message and SAVE_PAYLOAD_EXAMPLES is true, save it
       if (SAVE_PAYLOAD_EXAMPLES) {

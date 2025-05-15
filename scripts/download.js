@@ -33,7 +33,7 @@ function syncToDataDir (copyFrom, copyTo) {
 (async () => {
   if (!fs.existsSync(ARDENT_DATA_DIR)) await mkdir(ARDENT_DATA_DIR)
   if (!fs.existsSync(TMP_DOWNLOAD_DIR)) await mkdir(TMP_DOWNLOAD_DIR)
-  const res = await fetch(BACKUP_DOWNLOAD_MANIFEST) 
+  const res = await fetch(BACKUP_DOWNLOAD_MANIFEST)
   const files = await res.json()
 
   for (const f in files) {
@@ -53,7 +53,7 @@ function syncToDataDir (copyFrom, copyTo) {
     } else {
       console.error(`ERROR: Checksum did not match expected value\nExpected: ${file.sha256}\nActual: ${checksum}`)
       continue
-    } 
+    }
 
     console.log(`Uncompressing ${path.basename(file.url)} …`)
     console.time(`Uncompressed ${path.basename(file.url)}`)

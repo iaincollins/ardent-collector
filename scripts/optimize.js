@@ -1,6 +1,6 @@
 const { systemsDb, locationsDb, stationsDb, tradeDb } = require('../lib/db')
 const { getISOTimestamp } = require('../lib/utils/dates')
-const { 
+const {
   TRADE_DATA_MAX_AGE_DAYS,
   RESCUE_SHIP_MAX_AGE_DAYS,
   FLEET_CARRIER_MAX_AGE_DAYS
@@ -32,7 +32,7 @@ stationsDb.exec(`
 stationsDb.exec(`
   DELETE FROM stations WHERE stations.stationType = 'FleetCarrier' AND updatedAt <= '${getISOTimestamp(`-${FLEET_CARRIER_MAX_AGE_DAYS}`)}'
 `)
-// Purge GameplayPOI stations. These are the type given to non-dockable 
+// Purge GameplayPOI stations. These are the type given to non-dockable
 // installations - once constucted they are no longer valid markets/stations.
 stationsDb.exec(`
   DELETE FROM stations 
@@ -70,7 +70,7 @@ console.timeEnd('Optimize systemsDb')
 
 process.exit()
 
-function optimize(db) {
+function optimize (db) {
   console.time('Database optimization')
   if (FULL_VACUUM === true) db.exec('VACUUM')
   // db.pragma('integrity_check')

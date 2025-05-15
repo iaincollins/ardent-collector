@@ -7,7 +7,7 @@ const stream = require('stream')
 const { promisify } = require('util')
 const pipeline = promisify(stream.pipeline)
 
-const { 
+const {
   ARDENT_DOWNLOADS_BASE_URL,
   ARDENT_BACKUP_DIR,
   ARDENT_DOWNLOADS_DIR
@@ -40,7 +40,7 @@ const databasesToBackup = [
       zlib.createGzip({ level: 1 }), // Favour faster compression over smaller files, latter takes way too long for large files
       fs.createWriteStream(pathToTmpOutput)
     )
-    fs.renameSync(pathToTmpOutput,pathToOutput)
+    fs.renameSync(pathToTmpOutput, pathToOutput)
 
     const { size: oldSize } = fs.statSync(pathToDatabase)
     const { size: newSize, ctime: created } = fs.statSync(pathToOutput)

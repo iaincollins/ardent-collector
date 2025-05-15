@@ -3,18 +3,16 @@ const { ARDENT_CACHE_DIR, ARDENT_DATABASE_STATS } = require('../../lib/consts')
 const { getISOTimestamp } = require('../../lib/utils/dates')
 const { systemsDb, locationsDb, stationsDb, tradeDb } = require('../../lib/db')
 
-// TODO This needs a complete rewrite, it's both slow and not very precise 
+// TODO This needs a complete rewrite, it's both slow and not very precise
 // Any changes should be synced with the front end
 ;(async () => {
   console.log('Updating database stats…')
   console.time('Update database stats')
   const commodityStats = tradeDb.prepare(`
     SELECT
-      COUNT(*) AS tradeOrders,
+      COUNT(*) AS marketOrders,
       (SELECT COUNT(DISTINCT(commodityName)) as count FROM commodities) AS uniqueCommodities,
-      (SELECT COUNT(DISTINCT(systemName)) as count FROM commodities) AS tradeSystems,
-      (SELECT COUNT(DISTINCT(stationName)) as count FROM commodities WHERE fleetCarrier = 0) AS tradeStations,
-      (SELECT COUNT(DISTINCT(stationName)) as count FROM commodities WHERE fleetCarrier = 1) AS tradeCarriers,
+      (SELECT COUNT(DISTINCT(marketId)) as count FROM commodities) AS tradeMarkets,
       (SELECT COUNT(*) FROM commodities WHERE updatedAt > @last24HoursTimestamp) as updatedInLast24Hours
     FROM commodities
     `).get({
@@ -38,10 +36,8 @@ const { systemsDb, locationsDb, stationsDb, tradeDb } = require('../../lib/db')
       updatedInLast24Hours: stationStats?.updatedInLast24Hours ?? 0
     },
     trade: {
-      systems: commodityStats?.tradeSystems ?? 0,
-      stations: commodityStats?.tradeStations ?? 0,
-      carriers: commodityStats?.tradeCarriers ?? 0,
-      tradeOrders: commodityStats?.tradeOrders ?? 0,
+      markets: commodityStats?.tradeMarkets ?? 0,
+      orders: commodityStats?.marketOrders ?? 0,
       updatedInLast24Hours: commodityStats?.updatedInLast24Hours ?? 0,
       uniqueCommodities: commodityStats?.uniqueCommodities ?? 0
     },
