@@ -2,11 +2,12 @@
 
 ## About this software
 
-The Ardent Collector gathers data submitted to the Elite Dangerous Data Network.
+The Ardent Collector gathers data submitted to the [Elite Dangerous Data Network](https://github.com/EDCD/EDDN).
 
-Ardent has details for over 110,000,000 star systems, over 30,000,000 trade 
-orders for commodities and information on over 300,000 stations, ports, 
-settlements and fleet carriers throughout the galaxy.
+Ardent has details for over 150,000,000 star systems and over 30,000,000 trade 
+orders for commodities and information across markets on over 300,000 stations,
+ports, settlements and fleet carriers throughout the galaxy, with millions of 
+updates per day.
 
 The Ardent Collector writes data it gathers to relational databases and 
 generates reports from the data (e.g. summaries of commodity supply and demand 
@@ -25,9 +26,10 @@ This software assumes an internet connection as it attempts to connect to the
 the EDDN (Elite Dangerous Data Network) ZeroMQ instance at 
 tcp://eddn.edcd.io:9500 at startup to receive a data stream.
 
-Because of this, and other dependancies, it is build against Node.js v18.x,
+Because of this, and other dependancies, it is built against Node.js v18.x,
 an older LTS release that is end-of-life 2025-04-30 and may not work with 
-other versions of Node.js.
+other versions of Node.js until issues with newer versiosn of the ZeroMQ 
+library are resolved.
 
 After doing `npm install` you can run the service with `npm start`.
 
