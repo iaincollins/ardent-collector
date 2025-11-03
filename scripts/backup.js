@@ -5,22 +5,36 @@ const checkDiskSpace = require('check-disk-space').default
 const byteSize = require('byte-size')
 
 // Modern replacement for fast-folder-size to avoid fs.Stats deprecation warning
-function getFolderSizeSync (folderPath) {
+// Uses async operations with depth limiting and symlink protection
+async function getFolderSizeAsync (folderPath, maxDepth = 50) {
   let totalSize = 0
+  const visited = new Set() // Track visited paths to avoid symlink loops
 
-  function calculateSize (dirPath) {
+  async function calculateSize (dirPath, currentDepth = 0) {
+    if (currentDepth > maxDepth) {
+      console.warn(`Warning: Maximum depth (${maxDepth}) reached for ${dirPath}`)
+      return
+    }
+
     try {
-      const items = fs.readdirSync(dirPath, { withFileTypes: true })
+      const realPath = fs.realpathSync(dirPath)
+      if (visited.has(realPath)) {
+        return // Avoid circular symlinks
+      }
+      visited.add(realPath)
+
+      const items = await fs.promises.readdir(dirPath, { withFileTypes: true })
 
       for (const item of items) {
         const fullPath = path.join(dirPath, item.name)
 
         if (item.isFile()) {
-          const stats = fs.statSync(fullPath)
+          const stats = await fs.promises.stat(fullPath)
           totalSize += stats.size
         } else if (item.isDirectory()) {
-          calculateSize(fullPath)
+          await calculateSize(fullPath, currentDepth + 1)
         }
+        // Skip symbolic links, sockets, FIFOs, etc.
       }
     } catch (error) {
       // Ignore permission errors or missing directories
@@ -29,10 +43,62 @@ function getFolderSizeSync (folderPath) {
   }
 
   if (fs.existsSync(folderPath)) {
-    calculateSize(folderPath)
+    await calculateSize(folderPath)
   }
 
   return totalSize
+}
+
+// Synchronous wrapper for backward compatibility (blocking but safe)
+function getFolderSizeSync (folderPath) {
+  // For backup scenarios, we can use the async version directly since backup is already async
+  // This is a temporary sync wrapper - the caller should use await getFolderSizeAsync() instead
+  try {
+    let totalSize = 0
+    const visited = new Set()
+    const maxDepth = 50
+
+    function calculateSizeSync (dirPath, currentDepth = 0) {
+      if (currentDepth > maxDepth) {
+        console.warn(`Warning: Maximum depth (${maxDepth}) reached for ${dirPath}`)
+        return
+      }
+
+      try {
+        const realPath = fs.realpathSync(dirPath)
+        if (visited.has(realPath)) {
+          return // Avoid circular symlinks
+        }
+        visited.add(realPath)
+
+        const items = fs.readdirSync(dirPath, { withFileTypes: true })
+
+        for (const item of items) {
+          const fullPath = path.join(dirPath, item.name)
+
+          if (item.isFile()) {
+            const stats = fs.statSync(fullPath)
+            totalSize += stats.size
+          } else if (item.isDirectory()) {
+            calculateSizeSync(fullPath, currentDepth + 1)
+          }
+          // Skip symbolic links, sockets, FIFOs, etc.
+        }
+      } catch (error) {
+        // Ignore permission errors or missing directories
+        console.warn(`Warning: Could not access ${dirPath}:`, error.message)
+      }
+    }
+
+    if (fs.existsSync(folderPath)) {
+      calculateSizeSync(folderPath)
+    }
+
+    return totalSize
+  } catch (error) {
+    console.error('Error calculating folder size:', error.message)
+    return 0
+  }
 }
 
 const {

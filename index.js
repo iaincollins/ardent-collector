@@ -13,6 +13,10 @@ const {
   ARDENT_TRADE_DB,
   ARDENT_STATIONS_DB,
   ARDENT_LOCATIONS_DB,
+  ARDENT_DATA_DIR,
+  ARDENT_CACHE_DIR,
+  ARDENT_BACKUP_DIR,
+  ARDENT_DOWNLOADS_DIR,
   MAINTENANCE_DAY_OF_WEEK,
   MAINTENANCE_WINDOW_START_HOUR,
   MAINTENANCE_WINDOW_END_HOUR
@@ -35,13 +39,6 @@ const koaBodyParser = require('koa-bodyparser')
 
 console.log('Ensuring required directories exist …')
 // Create required directories inline
-const {
-  ARDENT_DATA_DIR,
-  ARDENT_CACHE_DIR,
-  ARDENT_BACKUP_DIR,
-  ARDENT_DOWNLOADS_DIR
-} = require('./lib/consts')
-
 const requiredDirectories = [ARDENT_DATA_DIR, ARDENT_CACHE_DIR, ARDENT_BACKUP_DIR, ARDENT_DOWNLOADS_DIR]
 for (const dir of requiredDirectories) {
   if (!fs.existsSync(dir)) {
@@ -321,7 +318,7 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
           const schema = payload?.$schemaRef ?? 'SCHEMA_UNDEFINED'
 
           // Simple duplicate detection using Set
-          const cacheKey = `${schema}-${payload?.header?.timestamp || Date.now()}`
+          const cacheKey = `${schema}-${payload?.header?.gatewayTimestamp || payload?.header?.timestamp || Date.now()}`
           if (messageCache.has(cacheKey)) {
             return // Already processed recently
           }
@@ -329,7 +326,7 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
           // Ignore messages that are not from the live version of the game
           // i.e. At least version 4.0.0.0 -or- the version starts with 'CAPI-Live-'
           // which indicates the data has come from the live API provided by FDev.
-          // This will mean we ignore some mesasges from software that is not
+          // This will mean we ignore some messages from software that is not
           // behaving correctly but we can't trust data from old software anyway as
           // it might be from someone running a legacy version of the game.
           const gameMajorVersion = Number(payload?.header?.gameversion?.split('.')?.[0] ?? 0)
@@ -348,7 +345,7 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
           // If we don't have an example message and SAVE_PAYLOAD_EXAMPLES is true, save it
           if (SAVE_PAYLOAD_EXAMPLES) {
             if (schema === 'https://eddn.edcd.io/schemas/journal/1') {
-              // Journal entries are a special case (they represent different game events and are raw evnets, not synthetic)
+              // Journal entries are a special case (they represent different game events and are raw events, not synthetic)
               if (!fs.existsSync(`${PAYLOAD_EXAMPLES_DIR}/journal_1/${payload.message.event.toLowerCase()}.json`)) {
                 fs.writeFileSync(`${PAYLOAD_EXAMPLES_DIR}/journal_1/${payload.message.event.toLowerCase()}.json`, JSON.stringify(payload, null, 2))
               }
@@ -380,7 +377,7 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
       }
     }
   })()
-})() // Close the main IIFE that started at line 122
+})() // Close the main IIFE
 
 process.on('SIGTERM', () => {
   console.log('Ardent Collector received SIGTERM signal')

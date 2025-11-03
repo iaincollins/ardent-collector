@@ -26,9 +26,9 @@ This software assumes an internet connection as it attempts to connect to the
 the EDDN (Elite Dangerous Data Network) ZeroMQ instance at 
 tcp://eddn.edcd.io:9500 at startup to receive a data stream.
 
-This software requires Node.js v22.x or later. Dependencies have been updated
-to ensure compatibility with the latest Node.js releases and modern JavaScript 
-features.
+This software requires Node.js v24.11.0 or later. The recommended version is Node.js v24.x, as specified in the `.nvmrc` and `.node-version` files.
+The project is tested in CI with Node.js v24.x and the latest LTS release (`lts/*`), and is expected to work with all of these versions.
+Dependencies have been updated to ensure compatibility with the latest Node.js releases and modern JavaScript features.
 
 After doing `npm install` you can run the service with `npm start`.
 
