@@ -1,6 +1,22 @@
 const Package = require('./package.json')
+
+// Prepend ISO timestamp to all console output to improve logs and tracing
+const _origConsole = {
+  log: console.log.bind(console),
+  info: console.info.bind(console),
+  warn: console.warn.bind(console),
+  error: console.error.bind(console),
+  debug: console.debug ? console.debug.bind(console) : console.log.bind(console)
+}
+const _ts = () => new Date().toISOString()
+for (const level of ['log', 'info', 'warn', 'error', 'debug']) {
+  console[level] = (...args) => {
+    _origConsole[level](`[${_ts()}]`, ...args)
+  }
+}
+
 console.log(`Ardent Collector v${Package.version} starting`)
-console.log(new Date().toISOString())
+console.log(_ts())
 
 // Initalise default value for env vars before other imports
 console.log('Configuring environment …')
