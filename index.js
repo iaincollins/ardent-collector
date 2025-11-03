@@ -34,8 +34,25 @@ const KoaRouter = require('@koa/router')
 const koaBodyParser = require('koa-bodyparser')
 
 console.log('Ensuring required directories exist …')
-const { ensureDirectoriesExist } = require('./lib/ensure-directories')
-ensureDirectoriesExist()
+// Create required directories inline
+const {
+  ARDENT_DATA_DIR,
+  ARDENT_CACHE_DIR,
+  ARDENT_BACKUP_DIR,
+  ARDENT_DOWNLOADS_DIR
+} = require('./lib/consts')
+
+const requiredDirectories = [ARDENT_DATA_DIR, ARDENT_CACHE_DIR, ARDENT_BACKUP_DIR, ARDENT_DOWNLOADS_DIR]
+for (const dir of requiredDirectories) {
+  if (!fs.existsSync(dir)) {
+    try {
+      fs.mkdirSync(dir, { recursive: true })
+      console.log(`Created directory: ${dir}`)
+    } catch (error) {
+      console.error(`Failed to create directory ${dir}:`, error.message)
+    }
+  }
+}
 
 console.log('Connecting to databases …')
 require('./lib/db')
@@ -48,6 +65,39 @@ const navRouteEvent = require('./lib/event-handlers/navroute-event')
 const approachSettlementEvent = require('./lib/event-handlers/approach-settlement-event')
 const journalEvent = require('./lib/event-handlers/journal-event')
 const { closeAllDatabaseConnections } = require('./lib/db')
+
+// Simple Node.js 24 optimizations inline
+const startTime = performance.now()
+const messageCache = new Set() // Simple Set for duplicate detection
+let messageCount = 0
+
+// Helper functions
+function performanceMark (name) {
+  performance.mark(name)
+}
+
+function getPerformanceDuration (startMark) {
+  try {
+    const endMark = `${startMark}-end`
+    performance.mark(endMark)
+    performance.measure(`${startMark}-duration`, startMark, endMark)
+    const measure = performance.getEntriesByName(`${startMark}-duration`)[0]
+    return measure ? measure.duration : 0
+  } catch (e) {
+    return Date.now() - startTime
+  }
+}
+
+function getMemoryInfo () {
+  const usage = process.memoryUsage()
+  return {
+    heapUsed: Math.round(usage.heapUsed / 1024 / 1024),
+    heapTotal: Math.round(usage.heapTotal / 1024 / 1024)
+  }
+}
+
+// Mark application start
+performanceMark('app-start')
 
 // When this is set don't write events to the database
 let databaseWriteLocked = false
@@ -246,62 +296,91 @@ if (SAVE_PAYLOAD_EXAMPLES === true &&
   console.log(printStats())
   console.log('Ardent Collector ready!')
 
-  for await (const [message] of socket) {
-    if (databaseWriteLocked === true) {
-      // TODO Buffer messages in a dead letter queue and process them later
-      await new Promise(setImmediate)
-      continue
-    }
+  // Enhanced message processing with Node.js 24 optimizations
+  performanceMark('message-processing-start')
 
-    zlib.inflate(message, (error, chunk) => {
-      if (error) return console.error(error)
+  ;(async () => {
+    for await (const [message] of socket) {
+      if (databaseWriteLocked === true) {
+        // TODO Buffer messages in a dead letter queue and process them later
+        await new Promise(setImmediate)
+        continue
+      }
 
-      const payload = JSON.parse(chunk.toString('utf8'))
-      const schema = payload?.$schemaRef ?? 'SCHEMA_UNDEFINED'
+      // Simple timeout handling with AbortController
+      try {
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
 
-      // Ignore messages that are not from the live version of the game
-      // i.e. At least version 4.0.0.0 -or- the version starts with 'CAPI-Live-'
-      // which indicates the data has come from the live API provided by FDev.
-      // This will mean we ignore some mesasges from software that is not
-      // behaving correctly but we can't trust data from old software anyway as
-      // it might be from someone running a legacy version of the game.
-      const gameMajorVersion = Number(payload?.header?.gameversion?.split('.')?.[0] ?? 0)
-      if (gameMajorVersion < 4 && !payload?.header?.gameversion?.startsWith('CAPI-Live-')) { return }
+        zlib.inflate(message, (error, chunk) => {
+          clearTimeout(timeoutId)
+          if (error) return console.error(error)
+          if (controller.signal.aborted) return
 
-      // If we don't have an example message and SAVE_PAYLOAD_EXAMPLES is true, save it
-      if (SAVE_PAYLOAD_EXAMPLES) {
-        if (schema === 'https://eddn.edcd.io/schemas/journal/1') {
-          // Journal entries are a special case (they represent different game events and are raw evnets, not synthetic)
-          if (!fs.existsSync(`${PAYLOAD_EXAMPLES_DIR}/journal_1/${payload.message.event.toLowerCase()}.json`)) {
-            fs.writeFileSync(`${PAYLOAD_EXAMPLES_DIR}/journal_1/${payload.message.event.toLowerCase()}.json`, JSON.stringify(payload, null, 2))
+          const payload = JSON.parse(chunk.toString('utf8'))
+          const schema = payload?.$schemaRef ?? 'SCHEMA_UNDEFINED'
+
+          // Simple duplicate detection using Set
+          const cacheKey = `${schema}-${payload?.header?.timestamp || Date.now()}`
+          if (messageCache.has(cacheKey)) {
+            return // Already processed recently
           }
-        } else {
-          const schemaFileName = schema.replace('https://eddn.edcd.io/schemas/', '').replaceAll('/', '_')
-          if (!fs.existsSync(`${PAYLOAD_EXAMPLES_DIR}/${schemaFileName}.json`)) { fs.writeFileSync(`${PAYLOAD_EXAMPLES_DIR}/${schemaFileName}.json`, JSON.stringify(payload, null, 2)) }
-        }
+
+          // Ignore messages that are not from the live version of the game
+          // i.e. At least version 4.0.0.0 -or- the version starts with 'CAPI-Live-'
+          // which indicates the data has come from the live API provided by FDev.
+          // This will mean we ignore some mesasges from software that is not
+          // behaving correctly but we can't trust data from old software anyway as
+          // it might be from someone running a legacy version of the game.
+          const gameMajorVersion = Number(payload?.header?.gameversion?.split('.')?.[0] ?? 0)
+          if (gameMajorVersion < 4 && !payload?.header?.gameversion?.startsWith('CAPI-Live-')) { return }
+
+          // Cache processed message to avoid duplicate processing
+          messageCache.add(cacheKey)
+
+          // Performance tracking
+          messageCount++
+          if (messageCount % 1000 === 0) {
+            const duration = getPerformanceDuration('message-processing-start')
+            console.log(`Processed ${messageCount} messages in ${Math.round(duration)}ms (avg: ${Math.round(duration / messageCount)}ms/msg)`)
+          }
+
+          // If we don't have an example message and SAVE_PAYLOAD_EXAMPLES is true, save it
+          if (SAVE_PAYLOAD_EXAMPLES) {
+            if (schema === 'https://eddn.edcd.io/schemas/journal/1') {
+              // Journal entries are a special case (they represent different game events and are raw evnets, not synthetic)
+              if (!fs.existsSync(`${PAYLOAD_EXAMPLES_DIR}/journal_1/${payload.message.event.toLowerCase()}.json`)) {
+                fs.writeFileSync(`${PAYLOAD_EXAMPLES_DIR}/journal_1/${payload.message.event.toLowerCase()}.json`, JSON.stringify(payload, null, 2))
+              }
+            } else {
+              const schemaFileName = schema.replace('https://eddn.edcd.io/schemas/', '').replaceAll('/', '_')
+              if (!fs.existsSync(`${PAYLOAD_EXAMPLES_DIR}/${schemaFileName}.json`)) { fs.writeFileSync(`${PAYLOAD_EXAMPLES_DIR}/${schemaFileName}.json`, JSON.stringify(payload, null, 2)) }
+            }
+          }
+          switch (schema) {
+            case 'https://eddn.edcd.io/schemas/commodity/3':
+              commodityEvent(payload)
+              break
+            case 'https://eddn.edcd.io/schemas/fssdiscoveryscan/1':
+              discoveryScanEvent(payload)
+              break
+            case 'https://eddn.edcd.io/schemas/navroute/1':
+              navRouteEvent(payload)
+              break
+            case 'https://eddn.edcd.io/schemas/approachsettlement/1':
+              approachSettlementEvent(payload)
+              break
+            case 'https://eddn.edcd.io/schemas/journal/1':
+              journalEvent(payload)
+              break
+          }
+        })
+      } catch (error) {
+        console.error('Message processing error:', error.message)
       }
-      switch (schema) {
-        case 'https://eddn.edcd.io/schemas/commodity/3':
-          commodityEvent(payload)
-          break
-        case 'https://eddn.edcd.io/schemas/fssdiscoveryscan/1':
-          discoveryScanEvent(payload)
-          break
-        case 'https://eddn.edcd.io/schemas/navroute/1':
-          navRouteEvent(payload)
-          break
-        case 'https://eddn.edcd.io/schemas/approachsettlement/1':
-          approachSettlementEvent(payload)
-          break
-        case 'https://eddn.edcd.io/schemas/journal/1':
-          journalEvent(payload)
-          break
-        default:
-      }
-    })
-    await new Promise(setImmediate)
-  }
-})()
+    }
+  })()
+})() // Close the main IIFE that started at line 122
 
 process.on('SIGTERM', () => {
   console.log('Ardent Collector received SIGTERM signal')
@@ -328,6 +407,10 @@ function printStats () {
     console.log('Warning: Could not read database stats:', error.message)
   }
 
+  // Get Node.js 24 performance metrics
+  const memoryInfo = getMemoryInfo()
+  const uptime = Math.round((performance.now() - startTime) / 1000)
+
   try {
     return `Ardent Collector v${Package.version} Online\n` +
       '--------------------------\n' +
@@ -346,8 +429,14 @@ function printStats () {
           `* Trade orders: ${stats.trade.tradeOrders.toLocaleString()}\n` +
           `* Trade updates in last 24 hours: ${stats.trade.updatedInLast24Hours.toLocaleString()}\n` +
           `* Unique commodities: ${stats.trade.uniqueCommodities.toLocaleString()}\n` +
-          `Stats last updated: ${stats.timestamp}`
-        : 'Stats not generated yet')
+          `Stats last updated: ${stats.timestamp}\n`
+        : 'Stats not generated yet\n') +
+      '\nNode.js 24 Performance:\n' +
+      `* Runtime: ${uptime}s\n` +
+      `* Memory Usage: ${memoryInfo.heapUsed}MB / ${memoryInfo.heapTotal}MB\n` +
+      `* Cache Size: ${messageCache.size} items\n` +
+      `* Messages Processed: ${messageCount}\n` +
+      `* Node.js: ${process.version}`
   } catch (e) {
     return 'Error: Could not load stats'
   }
