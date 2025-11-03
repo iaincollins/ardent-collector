@@ -2,8 +2,39 @@ const path = require('path')
 const fs = require('fs')
 const os = require('os')
 const checkDiskSpace = require('check-disk-space').default
-const fastFolderSizeSync = require('fast-folder-size/sync')
 const byteSize = require('byte-size')
+
+// Modern replacement for fast-folder-size to avoid fs.Stats deprecation warning
+function getFolderSizeSync (folderPath) {
+  let totalSize = 0
+
+  function calculateSize (dirPath) {
+    try {
+      const items = fs.readdirSync(dirPath, { withFileTypes: true })
+
+      for (const item of items) {
+        const fullPath = path.join(dirPath, item.name)
+
+        if (item.isFile()) {
+          const stats = fs.statSync(fullPath)
+          totalSize += stats.size
+        } else if (item.isDirectory()) {
+          calculateSize(fullPath)
+        }
+      }
+    } catch (error) {
+      // Ignore permission errors or missing directories
+      console.warn(`Warning: Could not access ${dirPath}:`, error.message)
+    }
+  }
+
+  if (fs.existsSync(folderPath)) {
+    calculateSize(folderPath)
+  }
+
+  return totalSize
+}
+
 const {
   writeBackupLog,
   backupDatabase,
@@ -31,11 +62,11 @@ const { locationsDb, tradeDb, stationsDb, systemsDb } = require('../lib/db')
   writeBackupLog(`Starting backup at ${started}`, true)
   /** * PRE-FLIGHT CHECKS  ****/
   const pathToLocationsDbBackup = path.join(ARDENT_BACKUP_DIR, '/locations.db')
-  const pathToTradeDbBackup = path.join(ARDENT_BACKUP_DIR, '/trade.db')
-  const pathToStationsDbBackup = path.join(ARDENT_BACKUP_DIR, '/stations.db')
-  const pathToSystemsDbBackup = path.join(ARDENT_BACKUP_DIR, '/systems.db')
+  const pathToTradeDbBackup = path.join(ARDENT_BACKUP_DIR, 'trade.db')
+  const pathToStationsDbBackup = path.join(ARDENT_BACKUP_DIR, 'stations.db')
+  const pathToSystemsDbBackup = path.join(ARDENT_BACKUP_DIR, 'systems.db')
 
-  const dataDirSizeInBytes = (os.platform() !== 'win32') ? fastFolderSizeSync(ARDENT_DATA_DIR) : 0
+  const dataDirSizeInBytes = (os.platform() !== 'win32') ? getFolderSizeSync(ARDENT_DATA_DIR) : 0
   const freeDiskSpaceInBytes = (await checkDiskSpace(ARDENT_BACKUP_DIR)).free
 
   writeBackupLog('Checking disk space')

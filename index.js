@@ -33,6 +33,10 @@ const Koa = require('koa')
 const KoaRouter = require('@koa/router')
 const koaBodyParser = require('koa-bodyparser')
 
+console.log('Ensuring required directories exist …')
+const { ensureDirectoriesExist } = require('./lib/ensure-directories')
+ensureDirectoriesExist()
+
 console.log('Connecting to databases …')
 require('./lib/db')
 
