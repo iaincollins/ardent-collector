@@ -30,7 +30,7 @@ const zmq = require('zeromq')
 const zlib = require('zlib')
 const cron = require('node-cron')
 const Koa = require('koa')
-const KoaRouter = require('koa-router')
+const KoaRouter = require('@koa/router')
 const koaBodyParser = require('koa-bodyparser')
 
 console.log('Connecting to databases …')

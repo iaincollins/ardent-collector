@@ -28,23 +28,23 @@
   },
   "homepage": "https://github.com/iaincollins/ardent-collector#readme",
   "dependencies": {
-    "better-sqlite3": "^8.3.0",
-    "byte-size": "^8.1.0",
-    "check-disk-space": "^3.3.1",
-    "cross-env": "^7.0.3",
-    "dotenv": "^16.0.3",
-    "fast-folder-size": "^1.7.1",
-    "koa": "^2.14.2",
-    "koa-bodyparser": "^4.4.0",
-    "koa-router": "^12.0.0",
-    "node-cron": "^3.0.2",
-    "zeromq": "^6.0.0-beta.20"
+    "@koa/router": "^12.0.2",
+    "better-sqlite3": "^12.4.1",
+    "byte-size": "^9.0.1",
+    "check-disk-space": "^3.4.0",
+    "cross-env": "^10.1.0",
+    "dotenv": "^17.2.3",
+    "fast-folder-size": "^2.4.0",
+    "koa": "^2.16.3",
+    "koa-bodyparser": "^4.4.1",
+    "node-cron": "^4.2.1",
+    "zeromq": "^6.5.0"
   },
   "devDependencies": {
     "standard": "^17.1.0"
   },
   "engines": {
-    "npm": "9.6.7",
-    "node": "18.17.1"
+    "npm": ">=10.0.0",
+    "node": ">=22.0.0"
   }
 }
