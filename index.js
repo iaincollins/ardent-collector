@@ -314,7 +314,15 @@ process.on('SIGINT', () => {
 process.on('uncaughtException', (e) => console.log('Uncaught exception:', e))
 
 function printStats () {
-  const stats = JSON.parse(fs.readFileSync(ARDENT_DATABASE_STATS))
+  let stats = null
+
+  try {
+    if (fs.existsSync(ARDENT_DATABASE_STATS)) {
+      stats = JSON.parse(fs.readFileSync(ARDENT_DATABASE_STATS))
+    }
+  } catch (error) {
+    console.log('Warning: Could not read database stats:', error.message)
+  }
 
   try {
     return `Ardent Collector v${Package.version} Online\n` +
