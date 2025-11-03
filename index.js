@@ -1,6 +1,6 @@
 const Package = require('./package.json')
 
-// Prepend ISO timestamp to all console output to improve logs and tracing
+// Prepend time (HH:MM:SS) to all console output to improve logs and tracing
 const _origConsole = {
   log: console.log.bind(console),
   info: console.info.bind(console),
@@ -8,7 +8,7 @@ const _origConsole = {
   error: console.error.bind(console),
   debug: console.debug ? console.debug.bind(console) : console.log.bind(console)
 }
-const _ts = () => new Date().toISOString()
+const _ts = () => new Date().toTimeString().substr(0, 8)
 for (const level of ['log', 'info', 'warn', 'error', 'debug']) {
   console[level] = (...args) => {
     _origConsole[level](`[${_ts()}]`, ...args)
