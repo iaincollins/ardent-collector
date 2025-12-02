@@ -91,9 +91,10 @@ const USE_ADDITIONAL_RAM = true
         'Mega ship',
         'Fleet Carrier',
         'Planetary Port',
-        'Orbis Starport',
         'Coriolis Starport',
+        'Orbis Starport',
         'Ocellus Starport',
+        'Dodec Starport',
         'Asteroid base'
       ].includes(station.type)) maxLandingPadSize = 3
       if ([
