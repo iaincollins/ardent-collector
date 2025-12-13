@@ -26,10 +26,9 @@ This software assumes an internet connection as it attempts to connect to the
 the EDDN (Elite Dangerous Data Network) ZeroMQ instance at 
 tcp://eddn.edcd.io:9500 at startup to receive a data stream.
 
-Because of this, and other dependancies, it is built against Node.js v18.x,
-an older LTS release that is end-of-life 2025-04-30 and may not work with 
-other versions of Node.js until issues with newer versiosn of the ZeroMQ 
-library are resolved.
+Note: Due to compatiblity issues with newer versions of the ZeroMQ module and 
+the ZeroMQ service hosted by EDDN, this package uses a beta release of v6.0.0 
+of the ZeroMQ module, which is the most recent version found to be compatible.
 
 After doing `npm install` you can run the service with `npm start`.
 
