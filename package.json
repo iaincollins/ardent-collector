@@ -1,11 +1,12 @@
 {
   "name": "ardent-collector",
-  "version": "3.1.1",
+  "version": "3.2.0",
   "description": "Ardent Collector saves data submitted to EDDN",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
     "dev": "cross-env NODE_ENV=development node index.js",
+    "dev:local": "npm run dev",
     "test": "node tests",
     "download": "node scripts/download.js",
     "backup": "node scripts/backup.js",
@@ -28,7 +29,7 @@
   },
   "homepage": "https://github.com/iaincollins/ardent-collector#readme",
   "dependencies": {
-    "better-sqlite3": "^8.3.0",
+    "better-sqlite3": "^12.5.0",
     "byte-size": "^8.1.0",
     "check-disk-space": "^3.3.1",
     "cross-env": "^7.0.3",
@@ -44,7 +45,7 @@
     "standard": "^17.1.0"
   },
   "engines": {
-    "npm": "9.6.7",
-    "node": "18.17.1"
+    "npm": "24.12.0",
+    "node": "11.6.2"
   }
 }
