@@ -8,11 +8,9 @@ const {
 
   // FIXME: The commodity stats should be updated to once again ignore
   // data from Fleet Carriers before it is enabled again
-  /*
   console.time('Update stats for commodities')
   await updateCommodityStats()
   console.timeEnd('Update stats for commodities')
-  */
 
   // The reports will be need to be updated to join with the stations table as
   // it relies on system positional data which is no longer in the trade db
